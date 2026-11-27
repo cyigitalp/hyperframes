@@ -46,7 +46,7 @@ driven by the GSAP root timeline (`gsap-hyperframes`).
 ```
 
 ```bash
-node .claude/skills/polyhaven-assets/polyhaven.mjs scene scene.json --out <video-project>
+node <SKILL_DIR>/polyhaven.mjs scene scene.json --out <video-project>
 ```
 
 Each role (any name; `type` is `models`, `textures` or `hdris`) is resolved by
@@ -84,7 +84,7 @@ copies from the cache with no request. `--offline` (or `POLYHAVEN_OFFLINE=1`)
 never touches the network and fails if something is missing. Before a render:
 
 ```bash
-node .claude/skills/polyhaven-assets/polyhaven.mjs verify <video-project>
+node <SKILL_DIR>/polyhaven.mjs verify <video-project>
 ```
 
 Never commit downloaded assets to this repo; a video project may keep its own
