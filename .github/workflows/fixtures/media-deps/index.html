@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #0b0d14;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #0b0d14;
+      }
+      #stage {
+        position: absolute;
+        inset: 0;
+        width: 1280px;
+        height: 720px;
+      }
+      #pixels {
+        position: absolute;
+        left: 40px;
+        top: 200px;
+        width: 576px;
+        height: 384px;
+        image-rendering: pixelated;
+      }
+      #hero-title {
+        position: absolute;
+        left: 80px;
+        top: 70px;
+        font: 700 64px/1 sans-serif;
+        color: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="3.4"
+      data-width="1280"
+      data-height="720"
+    >
+      <canvas
+        id="stage"
+        class="clip"
+        data-start="0"
+        data-duration="3.4"
+        data-track-index="0"
+        width="1280"
+        height="720"
+      ></canvas>
+      <canvas
+        id="pixels"
+        class="clip"
+        data-start="0"
+        data-duration="3.4"
+        data-track-index="1"
+        width="288"
+        height="192"
+      ></canvas>
+      <div id="hero-title" class="clip" data-start="0" data-duration="3.4" data-track-index="2">
+        GSAP + Three + PixelFX
+      </div>
+    </div>
+    <script>
+      const FPS = 30;
+      const F = HFGsapFrame;
+      const tl = F.createRootTimeline(gsap, { fps: FPS, durationFrames: 102 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.from(
+        "#hero-title",
+        { y: 60, opacity: 0, duration: F.frames(15, FPS), ease: "power3.out" },
+        F.frames(3, FPS),
+      );
+    </script>
+    <script type="module">
+      import * as THREE from "./lib/three.module.js";
+      import * as pixelfx from "./lib/pixelfx/core/index.js";
+      import * as nova from "./lib/pixelfx/fx/ice/frost-nova.js";
+      import { addPixelfxTrack } from "./pixelfx-frame.js";
+      const renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById("stage"),
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setPixelRatio(1);
+      renderer.setSize(1280, 720, false);
+      renderer.setClearColor(0x0b0d14, 1);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, 1280 / 720, 0.1, 100);
+      camera.position.set(0, 0, 6);
+      const mesh = new THREE.Mesh(
+        new THREE.TorusKnotGeometry(0.9, 0.3, 200, 32),
+        new THREE.MeshStandardMaterial({ color: 0xff6a3d, roughness: 0.35, metalness: 0.2 }),
+      );
+      mesh.position.set(2.6, -0.3, 0);
+      scene.add(mesh, new THREE.AmbientLight(0xffffff, 0.35));
+      const key = new THREE.DirectionalLight(0xffffff, 2.2);
+      key.position.set(3, 4, 5);
+      scene.add(key);
+      HFGsapFrame.addRenderTrack(tl, (t, p) => {
+        mesh.rotation.set(p * Math.PI, p * Math.PI * 2, 0);
+        renderer.render(scene, camera);
+      });
+      addPixelfxTrack(tl, {
+        pixelfx,
+        fx: nova,
+        ctx: document.getElementById("pixels").getContext("2d"),
+        fps: FPS,
+        bg: null,
+      });
+    </script>
+  </body>
+</html>
