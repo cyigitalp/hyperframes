@@ -3,7 +3,8 @@ name: Media deps
 # Verifies the GSAP + Three.js + PixelFX root dependencies install from a clean
 # checkout with the pinned Bun, and that they render together in HyperFrames,
 # including the vendored Lemo-Opuscar CRT post (vendor/lemo-opuscar) and the
-# data-animation chart fixture (bar race, counter, delta, line reveal).
+# data-animation chart fixture (bar race, counter, delta, line reveal) and the
+# map-animation fixture (camera zoom, country highlight, great-circle route).
 
 permissions:
   contents: read
@@ -27,6 +28,9 @@ on:
       - .github/workflows/fixtures/lemo-opuscar/**
       - .claude/skills/data-animation/**
       - .github/workflows/fixtures/data-animation/**
+      - .claude/skills/map-animation/**
+      - vendor/natural-earth/**
+      - .github/workflows/fixtures/map-animation/**
   pull_request:
     branches: [main]
     paths:
@@ -41,6 +45,9 @@ on:
       - .github/workflows/fixtures/lemo-opuscar/**
       - .claude/skills/data-animation/**
       - .github/workflows/fixtures/data-animation/**
+      - .claude/skills/map-animation/**
+      - vendor/natural-earth/**
+      - .github/workflows/fixtures/map-animation/**
 
 jobs:
   verify:
@@ -80,7 +87,7 @@ jobs:
           '
 
       - name: Frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs
 
       - name: Combined render (GSAP + Three.js + PixelFX)
         run: |
@@ -159,6 +166,22 @@ jobs:
           echo "rendered $frames frames"
           test "$frames" -eq 120
 
+      - name: Map animation render (camera zoom, country highlight, route)
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/map-animation"
+          mkdir -p "$W/lib"
+          cp .github/workflows/fixtures/map-animation/index.html "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js .claude/skills/map-animation/map-frame.js vendor/natural-earth/countries-110m.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js "$W/lib/"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o map-animation.mp4
+          frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 map-animation.mp4)
+          echo "rendered $frames frames"
+          test "$frames" -eq 180
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -167,5 +190,6 @@ jobs:
             ${{ runner.temp }}/media-deps/out.mp4
             ${{ runner.temp }}/lemo-opuscar/lemo-crt.mp4
             ${{ runner.temp }}/data-animation/data-animation.mp4
+            ${{ runner.temp }}/map-animation/map-animation.mp4
             bun-lock-resolve.diff
           if-no-files-found: ignore

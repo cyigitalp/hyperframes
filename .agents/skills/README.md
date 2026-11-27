@@ -81,3 +81,13 @@ financial comparisons and data infographics with exact numbers on every
 frame. It ships `data-frame.js` (CSV parsing and validation, rounding,
 `Intl` formatting, race ranks, line paths) and loads one reference at a time.
 Upstream commit and scope: `data-animation/UPSTREAM.md`.
+
+## Map animation
+
+`map-animation` adapts [iart-ai/map-animation-skills](https://github.com/iart-ai/map-animation-skills)
+(MIT) to the render contract: animated world maps, country and region
+highlights, comparisons, border draw-ons, pins, great-circle routes and a
+smooth fly-to camera between global and regional views. It ships
+`map-frame.js` (projections, country paths, routes, camera) with no
+dependency, and uses Natural Earth country data (public domain) from
+`vendor/natural-earth/`. Upstream commit and scope: `map-animation/UPSTREAM.md`.
