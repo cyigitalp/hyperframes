@@ -71,6 +71,7 @@
     "lint:registry-items": "node scripts/lint-registry-items.mjs"
   },
   "dependencies": {
+    "three": "^0.187.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
