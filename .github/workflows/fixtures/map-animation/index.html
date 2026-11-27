@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <script src="map-frame.js"></script>
+    <script src="countries-110m.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #0a1420;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #0a1420;
+        color: #f2f4f8;
+        font-family: "DejaVu Sans", Arial, sans-serif;
+      }
+      #stage {
+        position: absolute;
+        inset: 0;
+      }
+      #title {
+        position: absolute;
+        left: 48px;
+        top: 36px;
+        font-size: 34px;
+        font-weight: 700;
+        text-shadow: 0 2px 8px #0a1420;
+      }
+      #title .sub {
+        display: block;
+        margin-top: 8px;
+        font-size: 20px;
+        font-weight: 400;
+        color: #c3cad6;
+      }
+      .source {
+        position: absolute;
+        left: 48px;
+        bottom: 20px;
+        font-size: 19px;
+        color: #c3cad6;
+      }
+      .pin-label {
+        font-size: 22px;
+        font-weight: 700;
+        fill: #f2f4f8;
+        paint-order: stroke;
+        stroke: #0a1420;
+        stroke-width: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="6"
+      data-width="1280"
+      data-height="720"
+    >
+      <svg
+        id="stage"
+        class="clip"
+        data-start="0"
+        data-duration="6"
+        data-track-index="0"
+        width="1280"
+        height="720"
+        viewBox="0 0 1280 720"
+        data-layout-allow-overlap
+      >
+        <g id="map" data-layout-allow-overflow></g>
+        <path id="border" fill="none" stroke="#ffb547" stroke-width="3" stroke-linejoin="round" />
+        <path
+          id="route"
+          fill="none"
+          stroke="#3fa7ff"
+          stroke-width="4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <circle id="routeHead" r="7" fill="#ffffff" />
+        <g id="pins"></g>
+      </svg>
+      <h1 id="title" class="clip" data-start="0" data-duration="6" data-track-index="1">
+        Istanbul to London
+        <span id="sub" class="sub"></span>
+      </h1>
+      <p id="source" class="source clip" data-start="0" data-duration="6" data-track-index="2">
+        Map data: Natural Earth (public domain)
+      </p>
+    </div>
+    <script>
+      // Map animation fixture: a smooth global-to-regional camera flight, a country
+      // highlight with a border draw-on, pins and a great-circle route. Every value is
+      // a pure function of the seeked GSAP time; overlays step at 12 fps.
+      const FPS = 30;
+      const VIEW = { width: 1280, height: 720 };
+      const F = HFGsapFrame;
+      const M = HFMap;
+      const world = HFNaturalEarth["countries-110m"];
+      const land = world.features.filter((f) => f.id !== "ATA");
+      const proj = M.createProjection({ type: "mercator", ...VIEW, fit: land, padding: 24 });
+
+      const TARGET = M.findFeature(world, "TUR");
+      const CITIES = [
+        { name: "Istanbul", at: [28.98, 41.01], dx: 12, dy: 30 },
+        { name: "London", at: [-0.13, 51.51], dx: -16, dy: 8, anchor: "end" },
+      ];
+      const arc = M.greatCircle(CITIES[0].at, CITIES[1].at, 64).map(proj.project);
+      const regionCam = M.cameraFor(
+        M.bounds(
+          [TARGET, { type: "MultiPoint", coordinates: CITIES.map((c) => c.at) }],
+          proj.project,
+        ),
+        VIEW,
+        0.2,
+      );
+      regionCam.y -= 30 / regionCam.zoom; // nudge the region below the title
+      const worldCam = { x: VIEW.width / 2, y: VIEW.height / 2, zoom: 1 };
+      const flight = M.flyTo(worldCam, regionCam, VIEW);
+      const inOut = gsap.parseEase("power2.inOut");
+      const out = gsap.parseEase("power3.out");
+      const back = gsap.parseEase("back.out(2)");
+
+      const BASE = "#243447";
+      const ACCENT = "#e0892b";
+      const ns = "http://www.w3.org/2000/svg";
+      const mapG = document.getElementById("map");
+      let targetPath = null;
+      const others = [];
+      land.forEach((f) => {
+        const p = document.createElementNS(ns, "path");
+        p.setAttribute("d", M.pathD(f, proj.project));
+        p.setAttribute("fill", BASE);
+        p.setAttribute("stroke", "#0a1420");
+        p.setAttribute("stroke-width", "0.8");
+        p.setAttribute("vector-effect", "non-scaling-stroke");
+        mapG.appendChild(p);
+        if (f === TARGET) targetPath = p;
+        else others.push(p);
+      });
+      const ring = M.outerRings(TARGET)[0].map(proj.project);
+      const pinsG = document.getElementById("pins");
+      const pins = CITIES.map((c) => {
+        const g = document.createElementNS(ns, "g");
+        g.innerHTML =
+          '<circle r="16" fill="none" stroke="#ffffff" stroke-width="2"></circle>' +
+          '<circle r="7" fill="#ffffff"></circle>' +
+          '<text class="pin-label" x="' +
+          c.dx +
+          '" y="' +
+          c.dy +
+          '" text-anchor="' +
+          (c.anchor || "start") +
+          '">' +
+          c.name +
+          "</text>";
+        pinsG.appendChild(g);
+        return { g: g, ring: g.firstChild, label: g.lastChild, xy: proj.project(c.at) };
+      });
+      const border = document.getElementById("border");
+      const route = document.getElementById("route");
+      const head = document.getElementById("routeHead");
+      const title = document.getElementById("title");
+      const km = Math.round(M.distanceKm(CITIES[0].at, CITIES[1].at) / 10) * 10;
+      document.getElementById("sub").textContent =
+        km.toLocaleString("en-US") + " km on the great circle";
+
+      const tl = F.createRootTimeline(gsap, { fps: FPS, durationFrames: 180 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+
+      F.addRenderTrack(tl, (t) => {
+        // Camera: smooth every frame.
+        const cam = flight(inOut(M.local(t, 0.6, 2.2)));
+        mapG.setAttribute("transform", M.cameraTransform(cam, VIEW));
+        const screen = (pt) => M.toScreen(cam, VIEW, pt);
+
+        // Overlays: stepped to 12 fps for the editorial cadence.
+        const s = M.stepTime(t, FPS, 12);
+        const lit = out(M.local(s, 2.4, 0.8));
+        targetPath.setAttribute("fill", M.mixColor(BASE, ACCENT, lit));
+        const dim = String(1 - 0.4 * lit);
+        others.forEach((p) => p.setAttribute("fill-opacity", dim));
+        border.setAttribute("d", M.partialPath(ring.map(screen), inOut(M.local(s, 2.4, 1.0))).d);
+
+        pins.forEach((p, i) => {
+          const k = M.local(s, 2.9 + i * 0.25, 0.5);
+          const xy = screen(p.xy);
+          const drop = back(k);
+          p.g.setAttribute(
+            "transform",
+            "translate(" + xy[0] + " " + (xy[1] - 40 * (1 - drop)) + ")",
+          );
+          p.g.setAttribute("opacity", k > 0 ? "1" : "0");
+          p.ring.setAttribute("r", String(7 + 9 * out(M.local(s, 3.1 + i * 0.25, 0.6))));
+          p.label.setAttribute("opacity", String(out(M.local(s, 3.2 + i * 0.25, 0.4))));
+        });
+
+        const r = M.partialPath(arc.map(screen), inOut(M.local(s, 3.4, 1.6)));
+        route.setAttribute("d", r.d);
+        head.setAttribute("cx", r.head[0]);
+        head.setAttribute("cy", r.head[1]);
+        head.setAttribute("opacity", s >= 3.4 ? "1" : "0");
+        title.style.opacity = String(out(M.local(s, 0.2, 0.6)));
+      });
+    </script>
+  </body>
+</html>
