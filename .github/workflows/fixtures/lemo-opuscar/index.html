@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #07060b;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #07060b;
+      }
+      #screen {
+        position: absolute;
+        inset: 0;
+        width: 1280px;
+        height: 720px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="3"
+      data-width="1280"
+      data-height="720"
+    >
+      <canvas
+        id="screen"
+        class="clip"
+        data-start="0"
+        data-duration="3"
+        data-track-index="0"
+        width="1280"
+        height="720"
+      ></canvas>
+    </div>
+    <script>
+      // Lemo-Opuscar CRT/videotape post (vendor/lemo-opuscar/core/post/crt.js, MIT) on a
+      // GSAP-seeked Three.js + PixelFX scene. One paused root timeline; every pixel is a
+      // pure function of the seeked frame.
+      const FPS = 30;
+      const F = HFGsapFrame;
+      const tl = F.createRootTimeline(gsap, { fps: FPS, durationFrames: 90 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+    <script type="module">
+      import * as THREE from "./lib/three.module.js";
+      import * as pixelfx from "./lib/pixelfx/core/index.js";
+      import * as plasma from "./lib/pixelfx/fx/lightning/plasma-ball.js";
+      import { makePost } from "./lib/lemo/core/post/crt.js";
+      import { seg, eo, ss, env, back } from "./lib/lemo/core/lib.js";
+
+      const W = 1280,
+        H = 720;
+      const mk = (w, h) => Object.assign(document.createElement("canvas"), { width: w, height: h });
+      const scene2d = mk(W, H),
+        glow2d = mk(W, H),
+        gl3d = mk(W, H),
+        px = mk(112, 104);
+      const sc = scene2d.getContext("2d"),
+        gc = glow2d.getContext("2d"),
+        pc = px.getContext("2d");
+      const post = makePost(document.getElementById("screen"));
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas: gl3d,
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setPixelRatio(1);
+      renderer.setSize(W, H, false);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+      camera.position.set(0, 0, 7);
+      const knot = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(1.35, 1),
+        new THREE.MeshStandardMaterial({
+          color: 0x38e1ff,
+          emissive: 0x0b3a52,
+          roughness: 0.3,
+          flatShading: true,
+        }),
+      );
+      const wire = new THREE.LineSegments(
+        new THREE.EdgesGeometry(knot.geometry),
+        new THREE.LineBasicMaterial({ color: 0xbff6ff }),
+      );
+      knot.add(wire);
+      knot.position.set(-2.4, -0.15, 0);
+      scene.add(knot, new THREE.AmbientLight(0xffffff, 0.4));
+      const key = new THREE.DirectionalLight(0xffffff, 2.4);
+      key.position.set(3, 4, 5);
+      scene.add(key);
+
+      // PixelFX stepped forward in fixed 1/fps steps, replayed from 0 on a backwards seek.
+      const pfFrame = pixelfx.createFrame(112, 104),
+        pfImg = pc.createImageData(112, 104);
+      let inst = null,
+        stepped = 0;
+      function plasmaAt(frame) {
+        const target = frame % 90;
+        if (!inst || target < stepped) {
+          inst = pixelfx.createFx(plasma, { x: 56, y: 96 });
+          stepped = 0;
+        }
+        for (; stepped < target; stepped++) inst.update(1 / FPS);
+        pixelfx.clearFrame(pfFrame);
+        inst.draw(pfFrame);
+        pixelfx.composite(pfFrame, pfImg.data, null);
+        pc.putImageData(pfImg, 0, 0);
+      }
+
+      function title(ctx, t, a) {
+        const k = back(seg(t, 0.55, 1.1), 1.4);
+        ctx.save();
+        ctx.globalAlpha = a * seg(t, 0.55, 0.8);
+        ctx.font = "800 84px sans-serif";
+        ctx.fillStyle = "#ffd36b";
+        ctx.fillText("CHANNEL 98", 640 + (1 - k) * 160, 300);
+        ctx.font = "600 30px monospace";
+        ctx.fillStyle = "#9ff0ff";
+        ctx.fillText("LEMO CRT POST · HYPERFRAMES", 642, 352 + (1 - eo(seg(t, 0.8, 1.3))) * 30);
+        ctx.restore();
+      }
+
+      F.addRenderTrack(tl, (t) => {
+        const frame = Math.round(t * FPS);
+        knot.rotation.set(t * 0.9, t * 1.6, 0);
+        knot.scale.setScalar(0.85 + 0.15 * eo(seg(t, 0.2, 0.9)));
+        renderer.render(scene, camera);
+        plasmaAt(frame);
+
+        sc.fillStyle = "#0d0a18";
+        sc.fillRect(0, 0, W, H);
+        const grd = sc.createRadialGradient(400, 360, 40, 400, 360, 520);
+        grd.addColorStop(0, "#1d1640");
+        grd.addColorStop(1, "#0d0a18");
+        sc.fillStyle = grd;
+        sc.fillRect(0, 0, W, H);
+        sc.drawImage(gl3d, 0, 0);
+        sc.imageSmoothingEnabled = false;
+        sc.drawImage(px, 1010, 420, 168, 156);
+        title(sc, t, 1);
+
+        gc.clearRect(0, 0, W, H);
+        gc.fillStyle = "#000";
+        gc.fillRect(0, 0, W, H);
+        gc.imageSmoothingEnabled = false;
+        gc.drawImage(px, 1010, 420, 168, 156);
+        title(gc, t, 0.55);
+
+        post.render(scene2d, glow2d, frame, null, {
+          power: ss(seg(t, 0, 0.5)),
+          track: env(t, 1.7, 2.15, 0.08, 0.2),
+        });
+      });
+    </script>
+  </body>
+</html>

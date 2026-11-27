@@ -1,7 +1,8 @@
 name: Media deps
 
 # Verifies the GSAP + Three.js + PixelFX root dependencies install from a clean
-# checkout with the pinned Bun, and that they render together in HyperFrames.
+# checkout with the pinned Bun, and that they render together in HyperFrames,
+# including the vendored Lemo-Opuscar CRT post (vendor/lemo-opuscar).
 
 permissions:
   contents: read
@@ -20,6 +21,9 @@ on:
       - .claude/skills/gsap-hyperframes/**
       - .github/workflows/media-deps.yml
       - .github/workflows/fixtures/media-deps/**
+      - vendor/lemo-opuscar/**
+      - .claude/skills/lemo-opuscar-styles/**
+      - .github/workflows/fixtures/lemo-opuscar/**
   pull_request:
     branches: [main]
     paths:
@@ -29,6 +33,9 @@ on:
       - .claude/skills/gsap-hyperframes/**
       - .github/workflows/media-deps.yml
       - .github/workflows/fixtures/media-deps/**
+      - vendor/lemo-opuscar/**
+      - .claude/skills/lemo-opuscar-styles/**
+      - .github/workflows/fixtures/lemo-opuscar/**
 
 jobs:
   verify:
@@ -88,11 +95,43 @@ jobs:
           echo "rendered $frames frames"
           test "$frames" -eq 102
 
+      - name: Lemo-Opuscar helpers resolve against our three
+        run: |
+          node --input-type=module -e '
+            const tp = await import("./vendor/lemo-opuscar/core/three/post.js");
+            const crt = await import("./vendor/lemo-opuscar/core/post/crt.js");
+            const lib = await import("./vendor/lemo-opuscar/core/lib.js");
+            if (typeof tp.makePost !== "function" || typeof crt.makePost !== "function") throw new Error("makePost missing");
+            const r = lib.mulberry(7); if (r() !== lib.mulberry(7)()) throw new Error("mulberry not deterministic");
+            const rows = (await import("node:fs")).readFileSync("vendor/lemo-opuscar/styles.jsonl", "utf8").trim().split("\n").map(JSON.parse);
+            if (rows.length < 90 || rows.some((r) => !r.slug || !r.category)) throw new Error("styles.jsonl invalid");
+            console.log("lemo-opuscar ok,", rows.length, "styles");
+          '
+
+      - name: Lemo-Opuscar CRT post render (GSAP + Three.js + PixelFX)
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/lemo-opuscar"
+          mkdir -p "$W/lib/pixelfx" "$W/lib/lemo"
+          cp .github/workflows/fixtures/lemo-opuscar/index.html "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js node_modules/three/build/three.module.js node_modules/three/build/three.core.js "$W/lib/"
+          cp -r node_modules/pixelfx/src/. "$W/lib/pixelfx/"
+          cp -r vendor/lemo-opuscar/core "$W/lib/lemo/"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o lemo-crt.mp4
+          frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 lemo-crt.mp4)
+          echo "rendered $frames frames"
+          test "$frames" -eq 90
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: media-deps-render
           path: |
             ${{ runner.temp }}/media-deps/out.mp4
+            ${{ runner.temp }}/lemo-opuscar/lemo-crt.mp4
             bun-lock-resolve.diff
           if-no-files-found: ignore
