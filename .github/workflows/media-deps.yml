@@ -2,7 +2,8 @@ name: Media deps
 
 # Verifies the GSAP + Three.js + PixelFX root dependencies install from a clean
 # checkout with the pinned Bun, and that they render together in HyperFrames,
-# including the vendored Lemo-Opuscar CRT post (vendor/lemo-opuscar).
+# including the vendored Lemo-Opuscar CRT post (vendor/lemo-opuscar) and the
+# data-animation chart fixture (bar race, counter, delta, line reveal).
 
 permissions:
   contents: read
@@ -24,6 +25,8 @@ on:
       - vendor/lemo-opuscar/**
       - .claude/skills/lemo-opuscar-styles/**
       - .github/workflows/fixtures/lemo-opuscar/**
+      - .claude/skills/data-animation/**
+      - .github/workflows/fixtures/data-animation/**
   pull_request:
     branches: [main]
     paths:
@@ -36,6 +39,8 @@ on:
       - vendor/lemo-opuscar/**
       - .claude/skills/lemo-opuscar-styles/**
       - .github/workflows/fixtures/lemo-opuscar/**
+      - .claude/skills/data-animation/**
+      - .github/workflows/fixtures/data-animation/**
 
 jobs:
   verify:
@@ -75,7 +80,7 @@ jobs:
           '
 
       - name: Frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs
 
       - name: Combined render (GSAP + Three.js + PixelFX)
         run: |
@@ -126,6 +131,34 @@ jobs:
           echo "rendered $frames frames"
           test "$frames" -eq 90
 
+      - name: Lemo-Opuscar style guide fetch (pinned, not committed)
+        run: |
+          set -euo pipefail
+          test -f .claude/skills/lemo-opuscar-styles/SKILL.md
+          url=$(grep -o 'https://raw.githubusercontent.com/lemomo-ai/lemo-opuscar/[0-9a-f]\{40\}/styles/' .claude/skills/lemo-opuscar-styles/SKILL.md | head -1)
+          slug=$(head -1 vendor/lemo-opuscar/styles.jsonl | node -e 'process.stdin.on("data",d=>console.log(JSON.parse(d).slug))')
+          mkdir -p .lemo/$slug
+          curl -fsSL "${url}${slug}/STYLE.md" -o .lemo/$slug/STYLE.md
+          test -s .lemo/$slug/STYLE.md
+          git check-ignore -q .lemo/$slug/STYLE.md
+          echo "fetched $slug STYLE.md ($(wc -c < .lemo/$slug/STYLE.md) bytes), ignored by git"
+
+      - name: Data animation render (bar race, counter, delta, line)
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/data-animation"
+          mkdir -p "$W/lib"
+          cp .github/workflows/fixtures/data-animation/index.html "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js .claude/skills/data-animation/data-frame.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js "$W/lib/"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o data-animation.mp4
+          frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 data-animation.mp4)
+          echo "rendered $frames frames"
+          test "$frames" -eq 120
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -133,5 +166,6 @@ jobs:
           path: |
             ${{ runner.temp }}/media-deps/out.mp4
             ${{ runner.temp }}/lemo-opuscar/lemo-crt.mp4
+            ${{ runner.temp }}/data-animation/data-animation.mp4
             bun-lock-resolve.diff
           if-no-files-found: ignore

@@ -72,3 +72,12 @@ film styles searchable (`vendor/lemo-opuscar/styles.jsonl`, one line per style)
 and documents its vendored MIT helpers: CRT/videotape post, Three.js depth of
 field and bloom, and easings. Style guides (CC BY-NC) are fetched per film,
 never committed. Scope and update steps: `vendor/lemo-opuscar/UPSTREAM.md`.
+
+## Data animation
+
+`data-animation` adapts [iart-ai/data-animation-skills](https://github.com/iart-ai/data-animation-skills)
+(MIT) to the render contract: bar chart races, line reveals, counters,
+financial comparisons and data infographics with exact numbers on every
+frame. It ships `data-frame.js` (CSV parsing and validation, rounding,
+`Intl` formatting, race ranks, line paths) and loads one reference at a time.
+Upstream commit and scope: `data-animation/UPSTREAM.md`.
