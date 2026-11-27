@@ -64,3 +64,11 @@ change local agent discovery.
 unmodified (MIT). `gsap-hyperframes` adapts them to the render contract and
 ships `gsap-frame.js`, frame-accurate helpers for GSAP, Three.js and canvas.
 Upstream commit and update steps are in `gsap-hyperframes/UPSTREAM.md`.
+
+## Lemo-Opuscar styles
+
+`lemo-opuscar-styles` makes the 99 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)
+film styles searchable (`vendor/lemo-opuscar/styles.jsonl`, one line per style)
+and documents its vendored MIT helpers: CRT/videotape post, Three.js depth of
+field and bloom, and easings. Style guides (CC BY-NC) are fetched per film,
+never committed. Scope and update steps: `vendor/lemo-opuscar/UPSTREAM.md`.
