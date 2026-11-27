@@ -96,6 +96,8 @@ ENV PATH="/root/.bun/bin:$PATH"
 # --frozen-lockfile` treats any member missing from the build context as a
 # lockfile change and fails.
 COPY package.json bun.lock ./
+# pixelfx is a root dependency vendored as file:./vendor/pixelfx (see vendor/pixelfx/UPSTREAM.md).
+COPY vendor/pixelfx/ vendor/pixelfx/
 COPY packages/parsers/package.json packages/parsers/package.json
 # The share prepare script typechecks its parser imports during bun install.
 COPY packages/parsers/src/ packages/parsers/src/

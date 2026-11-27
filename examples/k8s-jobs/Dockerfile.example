@@ -127,6 +127,8 @@ ENV PRODUCER_HEADLESS_SHELL_PATH=${CHROME_DIR}/chrome-headless-shell/linux-${CHR
 # depends on it (e.g. packages/aws-lambda); the root package does not.
 WORKDIR /app
 COPY package.json bun.lock ./
+# pixelfx is a root dependency vendored as file:./vendor/pixelfx (see vendor/pixelfx/UPSTREAM.md).
+COPY vendor/pixelfx/ vendor/pixelfx/
 COPY packages/aws-lambda/package.json packages/aws-lambda/
 COPY packages/core/package.json packages/core/
 COPY packages/engine/package.json packages/engine/
