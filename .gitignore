@@ -117,7 +117,7 @@ packages/studio/data/
 # Installed skills (user-specific — agent-installed during sessions).
 # .claude/ = Claude Code, .agents/ = Codex CLI (both auto-discover their project skills
 # from these dirs). The two mirror each other and both need the same "ignore agent-installed
-# skills; keep the six repo-native ones" recipe. See .claude/skills/README.md for the
+# skills; keep the repo-native ones" (six house skills + vendored GSAP skills) recipe. See .claude/skills/README.md for the
 # packaging notes.
 
 .claude/*
@@ -131,6 +131,12 @@ packages/studio/data/
 !.claude/skills/seam-craft
 !.claude/skills/captions-overlay
 !.claude/skills/oversized-cursor
+!.claude/skills/gsap-core
+!.claude/skills/gsap-timeline
+!.claude/skills/gsap-utils
+!.claude/skills/gsap-plugins
+!.claude/skills/gsap-performance
+!.claude/skills/gsap-hyperframes
 
 .agents/*
 !.agents/skills
@@ -142,6 +148,12 @@ packages/studio/data/
 !.agents/skills/seam-craft
 !.agents/skills/captions-overlay
 !.agents/skills/oversized-cursor
+!.agents/skills/gsap-core
+!.agents/skills/gsap-timeline
+!.agents/skills/gsap-utils
+!.agents/skills/gsap-plugins
+!.agents/skills/gsap-performance
+!.agents/skills/gsap-hyperframes
 skills-lock.json
 
 # Skills from other PRs (not managed here)

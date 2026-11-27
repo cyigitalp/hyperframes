@@ -55,3 +55,12 @@ normal `npx skills add` discovery and from `npx skills add ... --all`. A named
 `metadata.internal`; no environment variable is needed. `INSTALL_INTERNAL_SKILLS=1`
 opts internal skills into normal discovery and bulk installation. This does not
 change local agent discovery.
+
+## GSAP skills
+
+`gsap-core`, `gsap-timeline`, `gsap-utils`, `gsap-plugins` and
+`gsap-performance` are the official
+[greensock/gsap-skills](https://github.com/greensock/gsap-skills), copied
+unmodified (MIT). `gsap-hyperframes` adapts them to the render contract and
+ships `gsap-frame.js`, frame-accurate helpers for GSAP, Three.js and canvas.
+Upstream commit and update steps are in `gsap-hyperframes/UPSTREAM.md`.
