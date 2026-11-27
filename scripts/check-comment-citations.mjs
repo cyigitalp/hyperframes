@@ -954,8 +954,12 @@ function changedFiles(root, base) {
     maxBuffer: 64e6,
   })
     .split("\n")
-    .filter(Boolean);
+    .filter((file) => file && !file.startsWith(VENDORED));
 }
+
+// Third-party code copied in unmodified keeps its upstream comments, which cite upstream files
+// this repo does not carry (vendor/pixelfx/UPSTREAM.md lists what was left out).
+const VENDORED = "vendor/";
 
 // The code on one removed line, comment stripped. It errs toward dropping names: a lost name
 // fails a citation loudly, a kept one would waive it silently.

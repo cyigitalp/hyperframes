@@ -1,0 +1,98 @@
+name: Media deps
+
+# Verifies the GSAP + Three.js + PixelFX root dependencies install from a clean
+# checkout with the pinned Bun, and that they render together in HyperFrames.
+
+permissions:
+  contents: read
+
+env:
+  HYPERFRAMES_NO_TELEMETRY: "1"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - package.json
+      - bun.lock
+      - vendor/pixelfx/**
+      - .claude/skills/gsap-hyperframes/**
+      - .github/workflows/media-deps.yml
+      - .github/workflows/fixtures/media-deps/**
+  pull_request:
+    branches: [main]
+    paths:
+      - package.json
+      - bun.lock
+      - vendor/pixelfx/**
+      - .claude/skills/gsap-hyperframes/**
+      - .github/workflows/media-deps.yml
+      - .github/workflows/fixtures/media-deps/**
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - id: bun
+        run: echo "version=$(jq -r .engines.bun package.json)" >> "$GITHUB_OUTPUT"
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: ${{ steps.bun.outputs.version }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Install from clean checkout (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Lockfile unchanged by a fresh resolve
+        run: |
+          bun install --ignore-scripts
+          git diff --exit-code -- bun.lock package.json || {
+            echo "::warning::bun install changed bun.lock (see diff above)"
+            git diff -- bun.lock > bun-lock-resolve.diff
+          }
+
+      - name: Resolve gsap, three, pixelfx
+        run: |
+          node --input-type=module -e '
+            const gsap = (await import("gsap")).gsap;
+            const THREE = await import("three");
+            const pfx = await import("pixelfx");
+            const nova = await import("pixelfx/fx/ice/frost-nova");
+            if (typeof pfx.createFx !== "function" || !nova.meta) throw new Error("pixelfx API missing");
+            console.log("gsap", gsap.version, "three r" + THREE.REVISION, "pixelfx", nova.meta.name);
+          '
+
+      - name: Frame helper tests
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs
+
+      - name: Combined render (GSAP + Three.js + PixelFX)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          W="$RUNNER_TEMP/media-deps"
+          mkdir -p "$W/lib/pixelfx"
+          cp .github/workflows/fixtures/media-deps/index.html "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js .claude/skills/gsap-hyperframes/pixelfx-frame.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js node_modules/three/build/three.module.js node_modules/three/build/three.core.js "$W/lib/"
+          cp -r node_modules/pixelfx/src/. "$W/lib/pixelfx/"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o out.mp4
+          frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 out.mp4)
+          echo "rendered $frames frames"
+          test "$frames" -eq 102
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: media-deps-render
+          path: |
+            ${{ runner.temp }}/media-deps/out.mp4
+            bun-lock-resolve.diff
+          if-no-files-found: ignore

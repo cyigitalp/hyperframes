@@ -70,7 +70,7 @@ render function, so the seeked time maps one to one to scene state.
 
 ## PixelFX pixel-art effects
 
-`pixelfx` (github:patch-gg/pixelfx, pinned in the root `package.json`) ships
+`pixelfx` (github:patch-gg/pixelfx, vendored at a pinned commit in `vendor/pixelfx/`) ships
 244 code-driven pixel effects. Its sims step forward only, so drive them with
 `pixelfx-frame.js`, which replays from frame 0 in fixed `1 / fps` steps on any
 backwards seek. Every seek order lands on the same pixels.

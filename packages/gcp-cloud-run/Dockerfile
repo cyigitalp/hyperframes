@@ -128,6 +128,8 @@ ENV PATH="/root/.bun/bin:$PATH"
 
 # Install workspace dependencies. Copy manifests first for layer caching.
 COPY package.json bun.lock ./
+# pixelfx is a root dependency vendored as file:./vendor/pixelfx (see vendor/pixelfx/UPSTREAM.md).
+COPY vendor/pixelfx/ vendor/pixelfx/
 COPY packages/share/package.json packages/share/package.json
 COPY packages/share/tsconfig.json packages/share/tsconfig.json
 COPY packages/share/src/ packages/share/src/

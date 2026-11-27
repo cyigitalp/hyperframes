@@ -72,7 +72,7 @@
   },
   "dependencies": {
     "gsap": "^3.15.0",
-    "pixelfx": "github:patch-gg/pixelfx#5294518ce7c72e48b6100a744596e0acf57f2826",
+    "pixelfx": "file:./vendor/pixelfx",
     "three": "^0.187.0",
     "yaml": "^2.9.0"
   },
