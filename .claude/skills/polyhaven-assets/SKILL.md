@@ -92,10 +92,10 @@ Never commit downloaded assets to this repo; a video project may keep its own
 
 ## 3. Load in the composition
 
-Copy `polyhaven-three.js` next to `index.html`, with three's `build/` and the
-`examples/jsm` loaders (`loaders/GLTFLoader.js`, `loaders/HDRLoader.js`,
-`utils/BufferGeometryUtils.js`, `utils/SkeletonUtils.js`) under `lib/three/`
-and an import map for `three` and `three/addons/`. Hold the render until the
+Copy `polyhaven-three.js` next to `index.html`, with three's `build/` and its
+`GLTFLoader`, `HDRLoader`, `BufferGeometryUtils` and `SkeletonUtils` addon
+modules under `lib/three/` (the exact copy commands are in the Poly Haven step
+of `.github/workflows/media-deps.yml`) and an import map for `three` and `three/addons/`. Hold the render until the
 assets are on the GPU with `window.__hf.buildReady`, registered in the classic
 script so it exists before the module runs:
 
