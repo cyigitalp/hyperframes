@@ -1,6 +1,6 @@
 # Lines, counters and financial comparisons
 
-Adapted from upstream `chart-animation/references/data-pipeline.md` (MIT).
+Adapted from the upstream [chart-animation data pipeline](https://github.com/iart-ai/data-animation-skills/blob/6570c0c4fbc9daa8d7ac1f1163a890352344206b/skills/chart-animation/references/data-pipeline.md) (MIT).
 
 ## Counter
 

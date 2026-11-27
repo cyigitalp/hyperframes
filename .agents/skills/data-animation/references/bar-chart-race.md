@@ -1,6 +1,6 @@
 # Bar chart race
 
-Adapted from upstream `chart-animation/references/bar-chart-race.md` (MIT).
+Adapted from the upstream [chart-animation bar chart race](https://github.com/iart-ai/data-animation-skills/blob/6570c0c4fbc9daa8d7ac1f1163a890352344206b/skills/chart-animation/references/bar-chart-race.md) (MIT).
 Start from the registry `bar-chart-race` block for the look; use this to
 drive it from real data.
 

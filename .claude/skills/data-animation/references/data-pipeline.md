@@ -1,10 +1,10 @@
 # Data pipeline: dataset to one data module to N renders
 
-Adapted from upstream `chart-animation/references/data-pipeline.md` (MIT).
+Adapted from the upstream [chart-animation data pipeline](https://github.com/iart-ai/data-animation-skills/blob/6570c0c4fbc9daa8d7ac1f1163a890352344206b/skills/chart-animation/references/data-pipeline.md) (MIT).
 
 ## One data module
 
-Keep the dataset in the project (`data.csv` or `data.json`) and the source
+Keep the dataset in the project (a CSV or JSON file) and the source
 line next to it. Parse once, before the timeline is built, with
 `toSeries(parseCSV(text), opts)`; it throws on ragged rows, duplicates, gaps
 and non-numbers, so a bad file fails the render instead of drawing a wrong
