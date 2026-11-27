@@ -6,7 +6,7 @@
       "name": "hyperframes-monorepo",
       "dependencies": {
         "gsap": "^3.15.0",
-        "pixelfx": "github:patch-gg/pixelfx#5294518ce7c72e48b6100a744596e0acf57f2826",
+        "pixelfx": "file:./vendor/pixelfx",
         "three": "^0.187.0",
         "yaml": "^2.9.0",
       },
@@ -1976,7 +1976,7 @@
 
     "pirates": ["pirates@4.0.7", "", {}, "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="],
 
-    "pixelfx": ["pixelfx@github:patch-gg/pixelfx#5294518", {}, "patch-gg-pixelfx-5294518"],
+    "pixelfx": ["pixelfx@file:vendor/pixelfx", {}],
 
     "pkg-types": ["pkg-types@1.3.1", "", { "dependencies": { "confbox": "^0.1.8", "mlly": "^1.7.4", "pathe": "^2.0.1" } }, "sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ=="],
 

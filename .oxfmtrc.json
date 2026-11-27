@@ -6,6 +6,7 @@
   "trailingComma": "all",
   "printWidth": 100,
   "ignorePatterns": [
+    "vendor/",
     "packages/share/src/sources/contract/path-policy.json",
     "packages/share/tests/fixtures/compositionSync/manifest-vectors.json"
   ]
