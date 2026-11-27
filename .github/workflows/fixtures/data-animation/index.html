@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <script src="data-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #0b0d12;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #0b0d12;
+        color: #f2f4f8;
+        font-family: "DejaVu Sans", Arial, sans-serif;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      #race {
+        position: absolute;
+        left: 48px;
+        top: 40px;
+        width: 680px;
+        height: 640px;
+      }
+      #race h1 {
+        font-size: 30px;
+        font-weight: 700;
+      }
+      #race .sub {
+        font-size: 20px;
+        color: #a9b1c2;
+        margin-top: 8px;
+      }
+      #bars {
+        position: absolute;
+        left: 0;
+        top: 110px;
+        width: 680px;
+        height: 420px;
+      }
+      .bar {
+        position: absolute;
+        left: 150px;
+        height: 64px;
+        border-radius: 4px;
+        background: #5b6b8c;
+      }
+      .bar.lead {
+        background: #3fa7ff;
+      }
+      .name {
+        position: absolute;
+        left: 0;
+        width: 138px;
+        height: 64px;
+        text-align: right;
+        font-size: 20px;
+        line-height: 64px;
+        color: #e6e9f0;
+      }
+      .val {
+        position: absolute;
+        height: 64px;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 64px;
+        color: #f2f4f8;
+      }
+      #period {
+        position: absolute;
+        right: 0;
+        bottom: 40px;
+        font-size: 72px;
+        font-weight: 700;
+        color: #a9b1c2;
+      }
+      #side {
+        position: absolute;
+        left: 780px;
+        top: 40px;
+        width: 452px;
+        height: 640px;
+      }
+      #side .label {
+        font-size: 20px;
+        color: #a9b1c2;
+      }
+      #counter {
+        font-size: 84px;
+        font-weight: 700;
+        margin-top: 10px;
+      }
+      #delta {
+        font-size: 26px;
+        font-weight: 700;
+        margin-top: 12px;
+        color: #4fd18b;
+      }
+      #line {
+        position: absolute;
+        left: 0;
+        top: 260px;
+      }
+      .source {
+        position: absolute;
+        left: 48px;
+        bottom: 20px;
+        font-size: 19px;
+        color: #a9b1c2;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="4"
+      data-width="1280"
+      data-height="720"
+    >
+      <section id="race" class="clip" data-start="0" data-duration="4" data-track-index="0">
+        <h1>Revenue by company</h1>
+        <p class="sub">USD billions, fiscal year</p>
+        <div id="bars" data-layout-allow-overlap></div>
+        <div id="period" class="num"></div>
+      </section>
+      <section id="side" class="clip" data-start="0" data-duration="4" data-track-index="1">
+        <p class="label">Company A, total revenue 2020 to 2023</p>
+        <div id="counter" class="num"></div>
+        <div id="delta" class="num"></div>
+        <svg id="line" width="452" height="300" viewBox="0 0 452 300">
+          <g id="grid"></g>
+          <path id="path" fill="none" stroke="#3fa7ff" stroke-width="5" stroke-linejoin="round" />
+          <circle id="head" r="8" fill="#3fa7ff" />
+          <text id="headLabel" class="num" fill="#f2f4f8" font-size="20" font-weight="700"></text>
+        </svg>
+      </section>
+      <p id="source" class="source clip" data-start="0" data-duration="4" data-track-index="2">
+        Source: sample data for the render test
+      </p>
+    </div>
+    <script>
+      // Data animation fixture: bar chart race, count-up, year-over-year delta and a
+      // line reveal, every value from data-frame.js as a pure function of the seeked
+      // GSAP time. Checks that the last frame shows the exact source values.
+      const FPS = 30;
+      const F = HFGsapFrame;
+      const D = HFDataFrame;
+      const CSV =
+        "year,Company A,Company B,Company C,Company D,Company E\n" +
+        "2020,182.5,147.2,96.1,74.0,61.3\n" +
+        "2021,211.9,168.1,140.4,90.7,58.8\n" +
+        "2022,229.8,198.3,205.4,89.4,72.9\n" +
+        "2023,245.1,239.6,181.0,101.2,88.4\n";
+      const data = D.toSeries(D.parseCSV(CSV), { period: "year" });
+      const N = data.periods.length;
+      const TIMING = { introHold: 0.5, perPeriod: 0.9, periods: N };
+      const ROW = 82;
+      const BAR_MAX = 400;
+
+      const tl = F.createRootTimeline(gsap, { fps: FPS, durationFrames: 120 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+
+      const bars = document.getElementById("bars");
+      const els = new Map();
+      data.series.forEach((s) => {
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = s.id;
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        const val = document.createElement("div");
+        val.className = "val num";
+        bars.append(name, bar, val);
+        els.set(s.id, { name: name, bar: bar, val: val });
+      });
+
+      const a = data.series[0].values;
+      const W = 452;
+      const H = 300;
+      const yMax = D.niceMax(Math.max.apply(null, a));
+      const x = D.scaleLinear([0, N - 1], [24, W - 96]);
+      const y = D.scaleLinear([0, yMax], [H - 24, 24]);
+      const pts = a.map((v, i) => [D.roundTo(x(i), 2), D.roundTo(y(v), 2)]);
+      document.getElementById("grid").innerHTML = D.ticks(yMax, 4)
+        .map(
+          (t) =>
+            '<line x1="24" x2="' +
+            (W - 24) +
+            '" y1="' +
+            y(t) +
+            '" y2="' +
+            y(t) +
+            '" stroke="#2a3142" />',
+        )
+        .join("");
+      const path = document.getElementById("path");
+      const head = document.getElementById("head");
+      const headLabel = document.getElementById("headLabel");
+      const counter = document.getElementById("counter");
+      const delta = document.getElementById("delta");
+      const period = document.getElementById("period");
+      const money = { style: "currency", currency: "USD", decimals: 1 };
+
+      F.addRenderTrack(tl, (t) => {
+        const pos = D.periodAt(t, TIMING);
+        const state = D.raceState(data, pos);
+        const axisMax = D.niceMax(state[0].value);
+        state.forEach((r) => {
+          const e = els.get(r.id);
+          const w = (r.value / axisMax) * BAR_MAX;
+          const top = r.rank * ROW + "px";
+          e.name.style.top = top;
+          e.bar.style.top = top;
+          e.val.style.top = top;
+          e.bar.style.width = w + "px";
+          e.bar.className = r.order === 0 ? "bar lead" : "bar";
+          e.val.style.left = 150 + w + 12 + "px";
+          e.val.textContent = D.formatNumber(r.value, { decimals: 1 });
+        });
+        period.textContent = data.periods[Math.round(pos)];
+
+        const total = a.reduce((s, v) => s + v, 0);
+        counter.textContent =
+          D.formatNumber(D.countValue(0, total, D.progress(t, 0.3, 1.5, "cubicOut"), 1), money) +
+          "B";
+        const yoy = D.change(a[N - 2], a[N - 1]);
+        const dp = D.progress(t, 1.8, 0.6, "cubicOut");
+        delta.style.opacity = String(dp);
+        delta.textContent =
+          D.formatNumber(yoy, { style: "percent", decimals: 1, signDisplay: "always" }) +
+          " in " +
+          data.periods[N - 1];
+
+        const lp = D.linePath(pts, D.progress(t, 0.5, (N - 1) * 0.9, "linear"));
+        path.setAttribute("d", lp.d);
+        head.setAttribute("cx", lp.head[0]);
+        head.setAttribute("cy", lp.head[1]);
+        headLabel.setAttribute("x", lp.head[0] + 14);
+        headLabel.setAttribute("y", lp.head[1] + 7);
+        headLabel.textContent = D.formatNumber(D.valueAt(a, lp.index), money);
+      });
+    </script>
+  </body>
+</html>

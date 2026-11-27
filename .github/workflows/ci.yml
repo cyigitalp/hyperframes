@@ -795,8 +795,8 @@ jobs:
       # The gsap-hyperframes helpers import gsap and pixelfx (vendor/pixelfx), root dependencies.
       - name: Install root dependencies for the frame helper tests
         run: bun install --frozen-lockfile --ignore-scripts
-      - name: Run GSAP and PixelFX frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .agents/skills/gsap-hyperframes/gsap-frame.test.mjs .agents/skills/gsap-hyperframes/pixelfx-frame.test.mjs
+      - name: Run GSAP, PixelFX and data frame helper tests
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .agents/skills/gsap-hyperframes/gsap-frame.test.mjs .agents/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .agents/skills/data-animation/data-frame.test.mjs
 
   test-skill-bootstrap-windows:
     name: "Test: skill bootstrap (Windows, Node 24)"
