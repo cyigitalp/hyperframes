@@ -124,3 +124,13 @@ the cue times the frame helper anchors tweens to, and a credits file.
 `sfx.sh check` verifies loudness, true peak, silences, the narration margin
 and frame sync in the render. The pinned venv and every take are cached
 outside the repo.
+
+## Video production
+
+`video-production` is the entry point for making a whole video from an
+approved idea with no stops: research, script, ElevenLabs narration through
+Higgsfield, per-scene tool selection across every skill above (`tools.md`),
+animation, sound, render, QC and delivery of the MP4, thumbnail, title and
+description. `production.mjs` keeps resumable checkpoints in the video
+project (stages, scenes and assets hashed, so nothing finished is redone or
+paid for twice) and refuses Higgsfield spend past the owner's budget.

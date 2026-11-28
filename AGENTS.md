@@ -24,6 +24,8 @@ Make any video by asking for it; the `/hyperframes` skill carries the contract a
 - `/slideshow` — a presentation, pitch deck or interactive deck. Output is a navigable deck, not a rendered MP4.
 - `/remotion-to-hyperframes` — bring existing video code or footage into HyperFrames (Remotion first; also Motion Canvas, Lottie, Three.js, canvas, or renders from other tools) and verify it frame by frame against the original.
 
+In this repo, a whole video from an approved idea (research to final MP4, thumbnail, title and description, no stops) starts with the repo-native `video-production` skill in `.claude/skills/` (`.agents/skills/` for Codex); it picks the other skills per scene and resumes from its checkpoints.
+
 ## Issue and PR triage
 
 Read [TRIAGE.md](TRIAGE.md) before classifying issues, advertising contribution work, or triaging PRs. Check current source and overlapping PRs; keep difficulty, readiness, and ownership separate. Apply changes only within the task's authorization and verify the resulting GitHub state.
