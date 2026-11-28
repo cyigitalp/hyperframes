@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #120d10;
+      }
+      #root {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #120d10;
+      }
+      .plane {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1280px;
+        height: 720px;
+      }
+      #wall {
+        left: -480px;
+        top: -300px;
+        width: 2240px;
+        height: 1320px;
+        background: url("textures/brick.png") center / cover no-repeat;
+        filter: sepia(1) saturate(2.4) hue-rotate(-20deg) brightness(0.62);
+      }
+      #beam {
+        left: -400px;
+        top: -260px;
+        width: 2080px;
+        height: 1240px;
+        background: linear-gradient(
+          115deg,
+          transparent 30%,
+          rgba(255, 205, 140, 0.4) 42%,
+          rgba(255, 205, 140, 0.08) 52%,
+          transparent 60%
+        );
+        mix-blend-mode: screen;
+      }
+      #cat {
+        position: absolute;
+        left: 170px;
+        top: 150px;
+        width: 940px;
+        height: auto;
+        /* the source photo crops the cat at its top and left edges: feather them */
+        -webkit-mask-image:
+          linear-gradient(to bottom, transparent, #000 12%),
+          linear-gradient(to right, transparent, #000 9%);
+        -webkit-mask-composite: source-in;
+        mask-image:
+          linear-gradient(to bottom, transparent, #000 12%),
+          linear-gradient(to right, transparent, #000 9%);
+        mask-composite: intersect;
+      }
+      #ledge {
+        left: -300px;
+        top: 556px;
+        width: 1880px;
+        height: 420px;
+        background:
+          repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 23px),
+          linear-gradient(180deg, #b07a4f 0 3px, #7a4b2c 3px, #4a2a17 40%, #2a170c);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.55);
+      }
+      #grass {
+        left: -140px;
+        top: 360px;
+        width: 980px;
+        height: 560px;
+        background: url("textures/grass.png") center / 900px 900px;
+        filter: sepia(1) saturate(3.5) hue-rotate(55deg) brightness(0.55) contrast(1.4);
+        -webkit-mask-image: radial-gradient(ellipse 50% 75% at 35% 100%, #000 50%, transparent 70%);
+        mask-image: radial-gradient(ellipse 50% 75% at 35% 100%, #000 50%, transparent 70%);
+      }
+      #vignette {
+        background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(8, 4, 8, 0.75));
+      }
+      #credit {
+        position: absolute;
+        right: 22px;
+        bottom: 16px;
+        padding: 6px 12px;
+        font: 600 19px/1.2 sans-serif;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="6"
+      data-width="1280"
+      data-height="720"
+    >
+      <div
+        id="wall"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="0"
+        data-layout-allow-overflow
+      ></div>
+      <div
+        id="beam"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="1"
+        data-layout-allow-overflow
+      ></div>
+      <svg
+        id="dustFar"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="2"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      ></svg>
+      <div
+        id="subject"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="3"
+        data-layout-allow-overflow
+      >
+        <img id="cat" src="cutouts/chelsea.trim.png" alt="" />
+      </div>
+      <div
+        id="ledge"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="4"
+        data-layout-allow-overflow
+      ></div>
+      <svg
+        id="dustNear"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="5"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      ></svg>
+      <div
+        id="grass"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="6"
+        data-layout-allow-overflow
+      ></div>
+      <div
+        id="vignette"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="7"
+      ></div>
+      <div id="credit" class="clip" data-start="0" data-duration="6" data-track-index="8">
+        camera-frame.js · CC0 photos: S. van der Walt (cat), textures
+      </div>
+    </div>
+    <script>
+      const FPS = 30;
+      const tl = HFGsapFrame.createRootTimeline(gsap, { fps: FPS, durationFrames: 180 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.camera = new Promise((resolve, reject) => {
+        window.__camDone = { resolve, reject };
+      });
+    </script>
+    <script type="module">
+      import * as C from "./camera-frame.js";
+      const $ = (id) => document.getElementById(id);
+      try {
+        // Seeded dust motes at two depths: they catch the light and give the
+        // air depth; near ones blur into bokeh under the depth of field.
+        const rnd = HFGsapFrame.seededRandom(21);
+        const motes = (svg, n, r0, r1) => {
+          const out = [];
+          for (let i = 0; i < n; i++) {
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            const m = {
+              x: rnd() * 1500 - 110,
+              y: rnd() * 800 - 40,
+              r: r0 + rnd() * (r1 - r0),
+              v: 6 + rnd() * 14,
+              ph: rnd() * 6.28,
+              el: c,
+            };
+            c.setAttribute("r", m.r.toFixed(1));
+            c.setAttribute("fill", "rgba(255,225,180,0.55)");
+            svg.appendChild(c);
+            out.push(m);
+          }
+          return out;
+        };
+        const far = motes($("dustFar"), 40, 1.2, 2.6);
+        const near = motes($("dustNear"), 14, 4, 9);
+        const drift = (list, t) => {
+          for (const m of list) {
+            m.el.setAttribute("cx", (m.x + Math.sin(t * 0.7 + m.ph) * 12).toFixed(1));
+            m.el.setAttribute("cy", (m.y - m.v * t).toFixed(1));
+          }
+        };
+
+        // Shot plan, each move motivated:
+        // 0.0-1.7 establishing: high and wide, foreground grass in focus.
+        // 1.7-3.4 tracking dolly right and in: parallax reveals the depth.
+        // 3.4-4.1 rack focus from the grass to the cat: the subject is found.
+        // 4.1-6.0 slow push-in, crane down to the eyes on the upper third.
+        const keys = C.sequence(
+          [{ t: 0, z: -340, y: -90, x: -120, focus: 430, aperture: 7 }],
+          [{ t: 1.7, z: -120, y: -40, x: -60, ease: "sine.inOut" }],
+          [{ t: 3.4, z: 160, x: 150, y: 0, ease: "power2.inOut" }],
+          C.shots.rackFocus({ t: 3.4, dur: 0.7, from: 430, to: 1000, aperture: 7 }),
+          [{ t: 6, z: 330, x: 120, y: -70, ease: "power2.inOut" }],
+        );
+        const cam = C.cameraTrack(keys);
+        const layers = [
+          { el: $("wall"), depth: 2600, atmosphere: { near: 1200, far: 3000, amount: 0.3 } },
+          { el: $("beam"), depth: 1900 },
+          { el: $("dustFar"), depth: 1500 },
+          { el: $("subject"), depth: 1000 },
+          { el: $("ledge"), depth: 960 },
+          { el: $("dustNear"), depth: 620 },
+          { el: $("grass"), depth: 430 },
+        ];
+        const draw = (t) => {
+          drift(far, t);
+          drift(near, t);
+          C.applyLayers(
+            layers,
+            C.addCam(cam(t), C.handheld(t, { seed: 5, amp: 2.5, freq: 0.6, roll: 0.08 })),
+            { maxBlur: 14 },
+          );
+        };
+        HFGsapFrame.addRenderTrack(tl, draw);
+        await $("cat").decode();
+        draw(tl.time());
+        window.__camDone.resolve();
+      } catch (err) {
+        window.__camDone.reject(err);
+        throw err;
+      }
+    </script>
+  </body>
+</html>

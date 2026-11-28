@@ -9,7 +9,9 @@ name: Media deps
 # cached, md5-checked polyhaven-assets helper, and a background-removal
 # fixture (rembg + U^2-Net cutouts, plate fill, parallax layers), and a
 # sound-effects fixture (earshot cues on animation frames, ducked under a
-# narration stand-in, checked for loudness, silence and frame sync).
+# narration stand-in, checked for loudness, silence and frame sync), and the
+# creative demos (real photo with an animated foreground, a rigged character,
+# a cinematic camera) and the creative QC repair loop on a deliberately weak cut.
 
 permissions:
   contents: read
@@ -42,6 +44,11 @@ on:
       - .github/workflows/fixtures/background-removal/**
       - .claude/skills/sound-effects/**
       - .github/workflows/fixtures/sound-effects/**
+      - .claude/skills/visual-director/**
+      - .claude/skills/character-animation/**
+      - .claude/skills/cinematography/**
+      - .claude/skills/creative-qc/**
+      - .github/workflows/fixtures/creative/**
   pull_request:
     branches: [main]
     paths:
@@ -65,11 +72,16 @@ on:
       - .github/workflows/fixtures/background-removal/**
       - .claude/skills/sound-effects/**
       - .github/workflows/fixtures/sound-effects/**
+      - .claude/skills/visual-director/**
+      - .claude/skills/character-animation/**
+      - .claude/skills/cinematography/**
+      - .claude/skills/creative-qc/**
+      - .github/workflows/fixtures/creative/**
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - id: bun
@@ -104,7 +116,7 @@ jobs:
           '
 
       - name: Frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs .claude/skills/background-removal/cutout-frame.test.mjs .claude/skills/sound-effects/sfx-frame.test.mjs
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs .claude/skills/background-removal/cutout-frame.test.mjs .claude/skills/sound-effects/sfx-frame.test.mjs .claude/skills/visual-director/visual-director.test.mjs .claude/skills/character-animation/rig-frame.test.mjs .claude/skills/cinematography/camera-frame.test.mjs
 
       - name: Combined render (GSAP + Three.js + PixelFX)
         run: |
@@ -312,6 +324,39 @@ jobs:
           npx -y hyperframes@0.9.104 render -f 30 -o sound-effects.mp4
           "$SK/sfx.sh" check "$W" --render sound-effects.mp4
 
+      - name: Creative demos (photo + animated foreground, rigged character, camera)
+        run: |
+          set -euo pipefail
+          FX="$PWD/.github/workflows/fixtures/creative"
+          M="$RUNNER_TEMP/creative-media"
+          mkdir -p "$M/textures"
+          # CC0 photos from scikit-image and their rembg cutouts from the step above.
+          cp -r "$RUNNER_TEMP/background-removal/cutouts" "$M/"
+          SKD=$("$HOME/.cache/hyperframes/rembg/venv/bin/python" -I -c 'import skimage,os;print(os.path.join(os.path.dirname(skimage.__file__),"data"))')
+          cp "$SKD"/brick.png "$SKD"/grass.png "$SKD"/coffee.png "$M/textures/"
+          node --test .claude/skills/creative-qc/cqc.test.mjs
+          for d in photo-mix:180 character:210 camera:180; do
+            demo=${d%%:*}
+            W="$RUNNER_TEMP/creative-$demo"
+            bash "$FX/stage.sh" "$demo" "$W" "$M"
+            (
+              cd "$W"
+              npx -y hyperframes@0.9.104 lint
+              npx -y hyperframes@0.9.104 check
+              npx -y hyperframes@0.9.104 render -f 30 -o "$demo.mp4" --quiet
+              frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 "$demo.mp4")
+              echo "$demo: $frames frames"
+              test "$frames" -eq "${d##*:}"
+            )
+          done
+
+      - name: Creative QC loop (catch a weak cut, repair two scenes, splice, pass)
+        run: bash .github/workflows/fixtures/creative/qc-loop.sh "$RUNNER_TEMP/creative-qc" "$RUNNER_TEMP/creative-media"
+
+      - name: Photo search (live, informational)
+        continue-on-error: true
+        run: node .claude/skills/visual-director/photo-search.mjs search "espresso cup" --limit 3 | head -60
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -328,5 +373,8 @@ jobs:
             ${{ runner.temp }}/background-removal/cutouts/
             ${{ runner.temp }}/sound-effects/sound-effects.mp4
             ${{ runner.temp }}/sound-effects/sfx/
+            ${{ runner.temp }}/creative-*/*.mp4
+            ${{ runner.temp }}/creative-qc/qc-*/
+            ${{ runner.temp }}/creative-qc/gate-*.json
             bun-lock-resolve.diff
           if-no-files-found: ignore

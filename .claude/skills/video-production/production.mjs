@@ -223,6 +223,20 @@ export function deliverCheck(dir) {
     problems.push("description missing or over 5000 characters");
   if (!d.thumbnailText || words(d.thumbnailText) > 3)
     problems.push("thumbnailText missing or over three words");
+  // creative QC (creative-qc/cqc.mjs gate --project) must have passed on this exact file
+  const g = path.join(dir, "production", "qc", "gate.json");
+  const video = d.video && path.join(dir, d.video);
+  if (!fs.existsSync(g))
+    problems.push(
+      "creative QC gate missing: run cqc.mjs analyze, the evaluation, then gate --project",
+    );
+  else {
+    const q = JSON.parse(fs.readFileSync(g, "utf8"));
+    if (!q.pass)
+      problems.push(`creative QC gate failed: ${(q.problems ?? []).slice(0, 3).join("; ")}`);
+    else if (video && fs.existsSync(video) && q.videoSha256 !== sha256(video))
+      problems.push("creative QC passed a different render: run it on the delivered video");
+  }
   const st = status(dir);
   if (st.repair.length) problems.push(`scenes not ok: ${st.repair.join(", ")}`);
   for (const x of st.stages)

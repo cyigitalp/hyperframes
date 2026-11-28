@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #1d1a22;
+      }
+      #root {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #1d1a22;
+      }
+      .plane {
+        position: absolute;
+        inset: 0;
+        width: 1280px;
+        height: 720px;
+      }
+      #wall {
+        inset: -160px;
+        width: 1600px;
+        height: 1040px;
+        background: url("textures/brick.png") center / cover no-repeat;
+        filter: sepia(0.75) saturate(1.6) hue-rotate(-12deg) brightness(0.85) contrast(1.05)
+          blur(1.2px);
+      }
+      #light {
+        background: radial-gradient(
+          520px 420px at 46% 42%,
+          rgba(255, 214, 150, 0.32),
+          rgba(20, 12, 30, 0.55) 70%,
+          rgba(10, 6, 18, 0.85)
+        );
+      }
+      #credit {
+        position: absolute;
+        left: 24px;
+        bottom: 18px;
+        padding: 6px 12px;
+        font: 600 19px/1.2 sans-serif;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.62);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="7"
+      data-width="1280"
+      data-height="720"
+    >
+      <div
+        id="wall"
+        class="clip plane"
+        data-start="0"
+        data-duration="7"
+        data-track-index="0"
+        data-layout-allow-overflow
+      ></div>
+      <svg
+        id="set"
+        class="clip plane"
+        data-start="0"
+        data-duration="7"
+        data-track-index="1"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      >
+        <rect x="-400" y="636" width="2080" height="300" fill="#6b4630" />
+        <rect x="-400" y="630" width="2080" height="12" fill="#3a2418" />
+        <g id="stool">
+          <rect x="598" y="430" width="120" height="16" rx="6" fill="#2d2a35" />
+          <rect x="610" y="446" width="12" height="190" fill="#2d2a35" />
+          <rect x="694" y="446" width="12" height="190" fill="#2d2a35" />
+          <rect x="612" y="540" width="92" height="8" fill="#2d2a35" />
+        </g>
+      </svg>
+      <svg
+        id="fg"
+        class="clip plane"
+        data-start="0"
+        data-duration="7"
+        data-track-index="2"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      >
+        <path
+          d="M1130,760 C1120,600 1060,520 1010,470 C1080,500 1140,560 1160,640 C1170,540 1210,470 1270,430 C1230,520 1210,610 1220,760 z"
+          fill="#0d1a14"
+        />
+        <path d="M-40,760 C-20,640 30,560 90,520 C60,600 50,680 60,760 z" fill="#0d1a14" />
+      </svg>
+      <div
+        id="light"
+        class="clip plane"
+        data-start="0"
+        data-duration="7"
+        data-track-index="3"
+      ></div>
+      <div id="credit" class="clip" data-start="0" data-duration="7" data-track-index="4">
+        Rig: rig-frame.js · wall: CC0 brick texture (scikit-image)
+      </div>
+    </div>
+    <script>
+      const FPS = 30;
+      const tl = HFGsapFrame.createRootTimeline(gsap, { fps: FPS, durationFrames: 210 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.rig = new Promise((resolve, reject) => {
+        window.__rigDone = { resolve, reject };
+      });
+    </script>
+    <script type="module">
+      import * as R from "./rig-frame.js";
+      import * as C from "./camera-frame.js";
+      import { pip } from "./characters/pip.js";
+      const $ = (id) => document.getElementById(id);
+      try {
+        // Performance: walk in, settle, talk and wave, double-take at the mug,
+        // reach and pick it up, raise it. Blinks and the hair tuft run on top.
+        const words = [
+          ["Hi!", 2.15, 2.45],
+          ["I'm", 2.55, 2.75],
+          ["Pip.", 2.8, 3.15],
+        ];
+        const rig = R.createRig(pip(), { place: { x: 120, y: 640, scale: 0.75 } });
+        rig
+          .add(R.walk({ start: 0, steps: 4, stepDur: 0.48, stride: 87.5, dir: 1 }))
+          .add(R.squash({ start: 1.92, amount: 0.07, dur: 0.35 }))
+          .add(R.blink({ start: 0, end: 7, seed: 11, at: [3.42] }))
+          .add(R.look({ start: 1.95, dx: 0, dy: 0 }))
+          .add(R.expression({ start: 1.9, emotion: "happy" }))
+          .add(R.talk({ words, emphasis: ["hi"] }))
+          .add(R.gesture({ start: 2.05, type: "wave", side: "L", hold: 0.75 }))
+          .add(R.take({ start: 3.45, kind: "double-take", dir: 1 }))
+          .add(R.expression({ start: 4.05, emotion: "surprised" }))
+          .add(R.expression({ start: 5.6, emotion: "smug" }))
+          .follow("tuft", "head", { gain: 1.4 });
+        // The mug sits on the stool; its handle is the grab point (local 0,0).
+        const mugAt = [624, 404];
+        const grabT = 4.95 + 0.42;
+        const target = rig.toCanvas(4.95, [mugAt[0] - 4, mugAt[1] + 2]);
+        rig.add(R.reach({ start: 4.95, target, side: "R", dur: 0.42, hold: 0.25, back: 0.35 }));
+        rig.add(R.gesture({ start: 5.95, type: "fist-pump", side: "R", hold: 0.6 }));
+
+        const view = R.mountRig($("set"), rig, { idPrefix: "pip" });
+        const NS = "http://www.w3.org/2000/svg";
+        const mug = document.createElementNS(NS, "g");
+        mug.innerHTML =
+          '<path d="M10,-30 h56 v44 q0,16 -16,16 h-24 q-16,0 -16,-16 z" fill="#f4efe6" stroke="#23212e" stroke-width="4"/>' +
+          '<path d="M10,-20 q-16,0 -16,12 q0,12 16,12" fill="none" stroke="#23212e" stroke-width="5"/>' +
+          '<path d="M24,-44 q-6,-8 0,-16 M40,-46 q-6,-8 0,-16 M54,-44 q-6,-8 0,-16" fill="none" stroke="#fff" stroke-width="3" opacity="0.7"/>' +
+          '<rect x="18" y="-20" width="40" height="10" rx="3" fill="#e8743b"/>';
+        $("set").appendChild(mug);
+        const mugRest = R.M.t(mugAt[0], mugAt[1]);
+
+        const cam = C.cameraTrack(
+          C.sequence(
+            [
+              { t: 0, x: -120, z: 0 },
+              { t: 1.95, x: 0, ease: "sine.inOut" },
+            ],
+            C.shots.pushIn({ t0: 2.0, t1: 3.4, z: 90 }),
+            [
+              { t: 3.95, zoom: 1 },
+              { t: 4.1, zoom: 1.12, ease: "back.out" },
+              { t: 5.0, zoom: 1.05, x: 60, ease: "power2.inOut" },
+            ],
+            [{ t: 6.9, zoom: 1.0, x: 30, z: 60, ease: "power2.inOut" }],
+          ),
+        );
+        const layers = [
+          { el: $("wall"), depth: 1700 },
+          { el: $("set"), depth: 1000 },
+          { el: $("fg"), depth: 560 },
+        ];
+        const draw = (t) => {
+          view.apply(t);
+          mug.setAttribute(
+            "transform",
+            R.M.css(R.propMatrix(rig, t, { role: "handR", rest: mugRest, grab: grabT })),
+          );
+          C.applyLayers(layers, C.addCam(cam(t), C.impact(t, 4.0, { amp: 6 })));
+        };
+        HFGsapFrame.addRenderTrack(tl, draw);
+        draw(tl.time());
+        window.__rigDone.resolve();
+      } catch (err) {
+        window.__rigDone.reject(err);
+        throw err;
+      }
+    </script>
+  </body>
+</html>

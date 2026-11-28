@@ -113,6 +113,25 @@ test("deliver gate checks files, three-word thumbnail and open work", () => {
   assert.ok(bad.problems.some((p) => p.includes("three words")));
   write(dir, "production/delivery.json", JSON.stringify({ ...d, thumbnailText: "Gold Rush" }));
   for (const k of P.STAGES.slice(0, -1)) P.done(dir, k);
+  assert.ok(P.deliverCheck(dir).problems.some((p) => p.startsWith("creative QC gate missing")));
+  const sha = P.sha256(path.join(dir, "renders/final.mp4"));
+  write(
+    dir,
+    "production/qc/gate.json",
+    JSON.stringify({ pass: false, problems: ["hook 2 is under 4"], videoSha256: sha }),
+  );
+  assert.ok(P.deliverCheck(dir).problems.some((p) => p.includes("hook 2 is under 4")));
+  write(
+    dir,
+    "production/qc/gate.json",
+    JSON.stringify({ pass: true, problems: [], videoSha256: "old" }),
+  );
+  assert.ok(P.deliverCheck(dir).problems.some((p) => p.includes("different render")));
+  write(
+    dir,
+    "production/qc/gate.json",
+    JSON.stringify({ pass: true, problems: [], videoSha256: sha }),
+  );
   assert.deepEqual(P.deliverCheck(dir), { ok: true, problems: [] });
   P.done(dir, "deliver", ["production/delivery.json"]);
   assert.equal(P.status(dir).next, null);

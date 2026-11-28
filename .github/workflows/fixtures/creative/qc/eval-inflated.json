@@ -1,0 +1,62 @@
+{
+  "evaluator": "fixture: an evaluator that trusts a successful render",
+  "dimensions": {
+    "hook": {
+      "score": 5,
+      "evidence": [
+        { "t": 0, "note": "render succeeded" },
+        { "t": 1, "note": "title is readable" }
+      ]
+    },
+    "story": {
+      "score": 5,
+      "evidence": [
+        { "t": 0, "note": "has three scenes" },
+        { "t": 6, "note": "ends" }
+      ]
+    },
+    "visual-engagement": {
+      "score": 5,
+      "evidence": [
+        { "t": 3, "note": "cat photo" },
+        { "t": 6, "note": "character" }
+      ]
+    },
+    "animation": {
+      "score": 5,
+      "evidence": [
+        { "t": 7, "note": "the character moves" },
+        { "t": 4, "note": "camera moves" }
+      ]
+    },
+    "character": {
+      "score": 5,
+      "evidence": [
+        { "t": 7, "note": "the character crosses the frame" },
+        { "t": 8, "note": "smiles" }
+      ]
+    },
+    "cinematography": {
+      "score": 5,
+      "evidence": [
+        { "t": 4, "note": "push-in" },
+        { "t": 5, "note": "depth" }
+      ]
+    },
+    "humor": {
+      "score": 5,
+      "evidence": [
+        { "t": 7, "note": "fun" },
+        { "t": 8, "note": "fun" }
+      ]
+    },
+    "pacing": {
+      "score": 5,
+      "evidence": [
+        { "t": 3, "note": "cuts" },
+        { "t": 6, "note": "cuts" }
+      ]
+    }
+  },
+  "findings": [{ "match": { "severity": "P0" }, "status": "accepted" }]
+}

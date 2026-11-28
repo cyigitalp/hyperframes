@@ -1,0 +1,52 @@
+{
+  "evaluator": "fixture: honest look at the weak cut (contact, hook and motion sheets)",
+  "dimensions": {
+    "hook": {
+      "score": 1,
+      "scenes": ["a_hook"],
+      "evidence": [
+        { "t": 0, "note": "a title card on a flat background is the first thing seen" },
+        { "t": 2.9, "note": "nothing has moved by 2.9 s" }
+      ]
+    },
+    "story": {
+      "score": 2,
+      "scenes": ["a_hook"],
+      "evidence": [
+        { "t": 0, "note": "the title tells instead of showing; three unrelated pictures follow" }
+      ]
+    },
+    "visual-engagement": {
+      "score": 2,
+      "scenes": ["a_hook"],
+      "evidence": [{ "t": 1.5, "note": "3 s of text on black" }]
+    },
+    "animation": {
+      "score": 1,
+      "scenes": ["c_walk"],
+      "evidence": [
+        { "file": "motion-2-rigid-slide.png", "note": "Pip slides across as one frozen picture" }
+      ]
+    },
+    "character": {
+      "score": 1,
+      "scenes": ["c_walk"],
+      "evidence": [{ "t": 7, "note": "no blink, no limb or face movement" }]
+    },
+    "cinematography": {
+      "score": 2,
+      "scenes": ["a_hook", "c_walk"],
+      "evidence": [{ "t": 4.5, "note": "only scene B has a camera move with depth" }]
+    },
+    "humor": {
+      "score": 1,
+      "scenes": ["c_walk"],
+      "evidence": [{ "t": 7, "note": "no gag or reaction" }]
+    },
+    "pacing": {
+      "score": 2,
+      "scenes": ["a_hook"],
+      "evidence": [{ "t": 0, "note": "a dead first third" }]
+    }
+  }
+}
