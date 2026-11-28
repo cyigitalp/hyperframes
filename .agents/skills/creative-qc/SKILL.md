@@ -24,7 +24,7 @@ node $CQC analyze renders/final.mp4 --out production/qc --scenes production/scen
 node $CQC gate production/qc/review.json --eval production/qc/eval.json --project .
 ```
 
-1. **analyze** writes `review.json` and sheets: `contact.png` (one frame per
+1. **analyze** writes review.json and sheets: `contact.png` (one frame per
    scene or shot), `hook.png` (0-3 s at 4 fps), `motion-*.png` for every
    flagged span. Measured findings: still holds, mostly-static scenes,
    camera-only moves on a still, rigid slides (an element moving as one
@@ -43,7 +43,7 @@ node $CQC gate production/qc/review.json --eval production/qc/eval.json --projec
    something the frames always show (hook, story, visual engagement,
    animation, cinematography, pacing), any dimension under 3, hook under 4,
    mean under 3.5, an open P0 or P1 finding, or a video that changed since
-   analyze. With `--project` it writes `production/qc/gate.json` (the deliver
+   analyze. With `--project` it writes production/qc/gate.json (the deliver
    gate of `video-production` requires it for the exact delivered file) and
    marks the scenes to repair `failed`.
 

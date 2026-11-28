@@ -78,7 +78,7 @@ handoff is files only, never the conversation:
   transition in.
 - **To Fable (evaluation)**: script.md, scenes.json, `production/qc/`
   (review.json and its sheets) and `creative-qc/rubric.md`. It returns
-  `production/qc/eval.json`: scores with timestamped evidence, decisions on
+  production/qc/eval.json: scores with timestamped evidence, decisions on
   the measured findings and new findings, each with a scene and one fix.
 
 Fable never sees a score it is asked to confirm; it scores from the sheets.
@@ -96,7 +96,7 @@ Fable never sees a score it is asked to confirm; it scores from the sheets.
 | scenes    | build each scene as its own sub-composition timed to its narration words (rigs, camera, layers); `scene <id> built`, `npx hyperframes check`, `ok` or `failed`   | `compositions/*.html`               |
 | edit      | master timeline, transitions (`motion-doctrine`, registry), music bed and SFX via `sound-effects` with the narration as the reference                            | `index.html`, mix files             |
 | render    | `npx hyperframes render`                                                                                                                                         | `renders/final.mp4`                 |
-| qc        | `check`, `sfx.sh check --render`, `cqc.mjs analyze`, the evaluation (Fable, above), `cqc.mjs gate --project`; repair until it passes                             | `qc/review.json`, `qc/gate.json`    |
+| qc        | `check`, `sfx.sh check --render`, `cqc.mjs analyze`, the evaluation (Fable, above), `cqc.mjs gate --project`; repair until it passes                             | qc/review.json, qc/gate.json        |
 | deliver   | thumbnail, title, description, `production.mjs deliver` must exit 0                                                                                              | delivery.json                       |
 
 ## Repair, don't rebuild
@@ -114,7 +114,7 @@ from `tools.md` rather than retrying.
 
 ## Standards that gate delivery
 
-`deliver` refuses a video without a passing `production/qc/gate.json` for that
+`deliver` refuses a video without a passing production/qc/gate.json for that
 exact file. A successful render is not a creative pass.
 
 - Hook on screen and in the voice within 3 s; no logo or title card first.
