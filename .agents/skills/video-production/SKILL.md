@@ -52,30 +52,30 @@ When this session's Agent tool accepts `model: "fable"`, run `direction` and
 the evaluation in `qc` as a Fable subagent; otherwise do them here. The
 handoff is files only, never the conversation:
 
-- **To Fable (direction)**: `brief.md`, `research.md`, `script.md`,
-  `tools.md`. It returns `direction.md` (look, tone, music, camera language)
-  and `scenes.json`: per scene `id`, narration line range, what the viewer
+- **To Fable (direction)**: brief.md, research.md, script.md,
+  `tools.md`. It returns direction.md (look, tone, music, camera language)
+  and scenes.json: per scene `id`, narration line range, what the viewer
   must believe, tools, assets with source (find / generate / build), camera,
   transition in.
-- **To Fable (evaluation)**: `script.md`, `scenes.json`, the snapshot
+- **To Fable (evaluation)**: script.md, scenes.json, the snapshot
   contact sheet and `REVIEW.md`. It returns a pass, or a list of scene ids
   with one concrete fix each.
 
 ## Stages
 
-| Stage     | Do                                                                                                                                                                 | Output in `production/`             |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| brief     | the approved idea, audience, target length, budget                                                                                                                 | `brief.md`                          |
-| research  | verify every claim the video makes with WebSearch; two sources for anything surprising; drop what can't be sourced                                                 | `research.md` (claim → source URL)  |
-| script    | American English, spoken rhythm, a hook that lands in the first 1–3 s, a joke or turn every 20–30 s, ~150 words a minute; only sourced claims                      | `script.md`                         |
-| direction | creative direction and the scene plan (Fable, above); tools from `tools.md`                                                                                        | `direction.md`, `scenes.json`       |
-| narration | estimate, `spend`, then Higgsfield `generate_audio` (`text2speech_v2`, `elevenlabs`); register it with `asset`; word timings with `npx hyperframes transcribe`     | `assets/narration.*`, timings       |
-| assets    | per asset in `scenes.json`: `asset <key>` first (exit 0 = reuse), else find or generate it, then `asset <key> --path ... --source ... --licence ... --credits ...` | files under `assets/`, `CREDITS.md` |
-| scenes    | build each scene as its own sub-composition timed to its narration words; `scene <id> built`, then `npx hyperframes check` on it; `ok` or `failed` with the error  | `compositions/*.html`               |
-| edit      | master timeline, transitions (`motion-doctrine`, registry), music bed and SFX via `sound-effects` with the narration as the reference                              | `index.html`, mix files             |
-| render    | `npx hyperframes render`                                                                                                                                           | `renders/final.mp4`                 |
-| qc        | `check`, `snapshot --review` + `REVIEW.md`, `sfx.sh check --render`, then the evaluation                                                                           | `REVIEW.md`                         |
-| deliver   | thumbnail, title, description, `production.mjs deliver` must exit 0                                                                                                | `delivery.json`                     |
+| Stage     | Do                                                                                                                                                                | Output in `production/`             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| brief     | the approved idea, audience, target length, budget                                                                                                                | brief.md                            |
+| research  | verify every claim the video makes with WebSearch; two sources for anything surprising; drop what can't be sourced                                                | research.md (claim → source URL)    |
+| script    | American English, spoken rhythm, a hook that lands in the first 1–3 s, a joke or turn every 20–30 s, ~150 words a minute; only sourced claims                     | script.md                           |
+| direction | creative direction and the scene plan (Fable, above); tools from `tools.md`                                                                                       | direction.md, scenes.json           |
+| narration | estimate, `spend`, then Higgsfield `generate_audio` (`text2speech_v2`, `elevenlabs`); register it with `asset`; word timings with `npx hyperframes transcribe`    | `assets/narration.*`, timings       |
+| assets    | per asset in scenes.json: `asset <key>` first (exit 0 = reuse), else find or generate it, then `asset <key> --path ... --source ... --licence ... --credits ...`  | files under `assets/`, `CREDITS.md` |
+| scenes    | build each scene as its own sub-composition timed to its narration words; `scene <id> built`, then `npx hyperframes check` on it; `ok` or `failed` with the error | `compositions/*.html`               |
+| edit      | master timeline, transitions (`motion-doctrine`, registry), music bed and SFX via `sound-effects` with the narration as the reference                             | `index.html`, mix files             |
+| render    | `npx hyperframes render`                                                                                                                                          | `renders/final.mp4`                 |
+| qc        | `check`, `snapshot --review` + `REVIEW.md`, `sfx.sh check --render`, then the evaluation                                                                          | `REVIEW.md`                         |
+| deliver   | thumbnail, title, description, `production.mjs deliver` must exit 0                                                                                               | delivery.json                       |
 
 ## Repair, don't rebuild
 
@@ -100,12 +100,12 @@ from `tools.md` rather than retrying.
 - Thumbnail: 1280×720, at most three words, readable at phone size, built as
   a HyperFrames composition and saved with `snapshot`.
 - Title under 70 characters for search; description with a two-line
-  summary, chapters from scene times, sources from `research.md` and every
+  summary, chapters from scene times, sources from research.md and every
   credit `CREDITS.md` asks for.
 
 ## Delivery
 
-`production/delivery.json`:
+`<project>/production/delivery.json`:
 
 ```json
 {
