@@ -17,9 +17,6 @@ on:
         description: "Seeds to run, a comma list or a-b range (default: today's 200)."
         type: string
         default: ""
-  schedule:
-    # Daily at 08:41 UTC, off the :00 pile and away from regression.yml's 06:17.
-    - cron: "41 8 * * *"
 
 jobs:
   plan:

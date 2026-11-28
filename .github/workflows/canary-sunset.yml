@@ -14,9 +14,6 @@ permissions:
   contents: read
 
 on:
-  schedule:
-    # Mondays at 15:10 UTC, shortly after the CodeQL run.
-    - cron: "10 15 * * 1"
   workflow_dispatch:
 
 jobs:
