@@ -111,3 +111,16 @@ hole-filled background plates into the video project with a manifest, caches
 the pinned venv, the md5-checked weights and every processed image outside
 the repo, and ships `cutout-frame.js` for placement, parallax and Three.js
 planes. Nothing downloaded or generated is committed here.
+
+## Sound effects
+
+`sound-effects` adds cinematic hits, whooshes, risers, foley, ambience and
+comedic sounds with [earshot](https://github.com/Leonxlnx/earshot) (MIT; the
+sounds it renders are free for any use) on CPU, with no model, API key or
+paid service. A cue list next to the composition names each sound and its
+frame; `sfx.sh render` places each take on its frame, ducks music and beds
+under a supplied narration file (never altered), and writes the mix, stems,
+the cue times the frame helper anchors tweens to, and a credits file.
+`sfx.sh check` verifies loudness, true peak, silences, the narration margin
+and frame sync in the render. The pinned venv and every take are cached
+outside the repo.

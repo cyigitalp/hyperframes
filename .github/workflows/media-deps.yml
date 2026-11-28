@@ -7,7 +7,9 @@ name: Media deps
 # map-animation fixture (camera zoom, country highlight, great-circle route),
 # and a Poly Haven scene (glTF model, PBR material, HDRI) fetched through the
 # cached, md5-checked polyhaven-assets helper, and a background-removal
-# fixture (rembg + U^2-Net cutouts, plate fill, parallax layers).
+# fixture (rembg + U^2-Net cutouts, plate fill, parallax layers), and a
+# sound-effects fixture (earshot cues on animation frames, ducked under a
+# narration stand-in, checked for loudness, silence and frame sync).
 
 permissions:
   contents: read
@@ -38,6 +40,8 @@ on:
       - .github/workflows/fixtures/polyhaven/**
       - .claude/skills/background-removal/**
       - .github/workflows/fixtures/background-removal/**
+      - .claude/skills/sound-effects/**
+      - .github/workflows/fixtures/sound-effects/**
   pull_request:
     branches: [main]
     paths:
@@ -59,6 +63,8 @@ on:
       - .github/workflows/fixtures/polyhaven/**
       - .claude/skills/background-removal/**
       - .github/workflows/fixtures/background-removal/**
+      - .claude/skills/sound-effects/**
+      - .github/workflows/fixtures/sound-effects/**
 
 jobs:
   verify:
@@ -98,7 +104,7 @@ jobs:
           '
 
       - name: Frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs .claude/skills/background-removal/cutout-frame.test.mjs
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs .claude/skills/background-removal/cutout-frame.test.mjs .claude/skills/sound-effects/sfx-frame.test.mjs
 
       - name: Combined render (GSAP + Three.js + PixelFX)
         run: |
@@ -274,6 +280,38 @@ jobs:
           echo "rendered $frames frames"
           test "$frames" -eq 120
 
+      - name: Sound effects caches (venv, earshot takes)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/hyperframes/earshot
+          key: earshot-${{ runner.os }}-${{ hashFiles('.claude/skills/sound-effects/requirements.txt', '.claude/skills/sound-effects/sfx.py') }}
+          restore-keys: earshot-${{ runner.os }}-
+
+      - name: Sound effects render (earshot cues on frames, ducked mix, sync check)
+        run: |
+          set -euo pipefail
+          SK="$PWD/.claude/skills/sound-effects"
+          W="$RUNNER_TEMP/sound-effects"
+          mkdir -p "$W/lib" "$W/audio"
+          "$SK/sfx.sh" doctor
+          "$SK/sfx.sh" selftest
+          cp .github/workflows/fixtures/sound-effects/index.html .github/workflows/fixtures/sound-effects/cues.json "$SK/sfx-frame.js" "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js "$W/lib/"
+          # Narration stand-in (ffmpeg's flite voice): real projects hand in their ElevenLabs file here.
+          ffmpeg -v error -f lavfi -i "flite=text='Every sound lands on its frame. Never over the voice.':voice=slt" -ar 48000 -ac 1 "$W/audio/narration.wav"
+          "$SK/sfx.sh" render "$W/cues.json"
+          # A fresh project offline must come entirely from the take cache.
+          rm -rf "$W/sfx" "$W/audio/mix.wav" "$W/audio/stems"
+          "$SK/sfx.sh" render "$W/cues.json" --offline | tee "$RUNNER_TEMP/sfx-rerun.log"
+          grep -q "0 made, 8 cache hit(s)" "$RUNNER_TEMP/sfx-rerun.log"
+          cat "$W/sfx/CREDITS.md"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o sound-effects.mp4
+          "$SK/sfx.sh" check "$W" --render sound-effects.mp4
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -288,5 +326,7 @@ jobs:
             ${{ runner.temp }}/polyhaven/polyhaven/CREDITS.md
             ${{ runner.temp }}/background-removal/background-removal.mp4
             ${{ runner.temp }}/background-removal/cutouts/
+            ${{ runner.temp }}/sound-effects/sound-effects.mp4
+            ${{ runner.temp }}/sound-effects/sfx/
             bun-lock-resolve.diff
           if-no-files-found: ignore

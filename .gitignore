@@ -145,6 +145,7 @@ packages/studio/data/
 !.claude/skills/map-animation
 !.claude/skills/polyhaven-assets
 !.claude/skills/background-removal
+!.claude/skills/sound-effects
 
 .agents/*
 !.agents/skills
@@ -167,6 +168,7 @@ packages/studio/data/
 !.agents/skills/map-animation
 !.agents/skills/polyhaven-assets
 !.agents/skills/background-removal
+!.agents/skills/sound-effects
 skills-lock.json
 
 # Lemo-Opuscar style guides fetched per film (CC BY-NC, never committed)
