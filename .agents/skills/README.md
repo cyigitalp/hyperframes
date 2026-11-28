@@ -100,3 +100,14 @@ assets from scene requirements through the public API, sizes them to the
 shot, caches downloads by md5 outside the repo, copies them into the video
 project for offline rendering, and writes the "Powered by Poly Haven" credit
 the API terms ask for. Nothing downloaded is committed here.
+
+## Background removal
+
+`background-removal` cuts subjects out of photos on CPU with
+[rembg](https://github.com/danielgatis/rembg) (MIT) and the U^2-Net model
+(Apache-2.0; models with non-commercial weights or training data are
+refused). It writes transparent cutouts, trimmed sprites, mattes and
+hole-filled background plates into the video project with a manifest, caches
+the pinned venv, the md5-checked weights and every processed image outside
+the repo, and ships `cutout-frame.js` for placement, parallax and Three.js
+planes. Nothing downloaded or generated is committed here.

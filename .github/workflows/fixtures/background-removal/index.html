@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #0a0e1a;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        background: #0a0e1a;
+      }
+      .layer {
+        position: absolute;
+        will-change: transform;
+      }
+      #plate {
+        filter: blur(2px) brightness(0.8);
+      }
+      #stage {
+        position: absolute;
+        inset: 0;
+        width: 1280px;
+        height: 720px;
+      }
+      #pixels {
+        position: absolute;
+        width: 432px;
+        height: 288px;
+        image-rendering: pixelated;
+      }
+      #title {
+        position: absolute;
+        left: 64px;
+        top: 52px;
+        padding: 12px 18px;
+        font: 700 44px/1.1 sans-serif;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.72);
+        border-radius: 8px;
+      }
+      #credit {
+        position: absolute;
+        right: 32px;
+        bottom: 28px;
+        padding: 8px 14px;
+        font: 500 20px/1.2 sans-serif;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="4"
+      data-width="1280"
+      data-height="720"
+    >
+      <img
+        id="plate"
+        class="clip layer"
+        data-start="0"
+        data-duration="4"
+        data-track-index="0"
+        data-layout-allow-overflow
+        src="cutouts/rocket.plate.jpg"
+        alt=""
+      />
+      <img
+        id="rocket"
+        class="clip layer"
+        data-start="0"
+        data-duration="4"
+        data-track-index="1"
+        data-layout-allow-overflow
+        src="cutouts/rocket.png"
+        alt=""
+      />
+      <canvas
+        id="stage"
+        class="clip"
+        data-start="0"
+        data-duration="4"
+        data-track-index="2"
+        data-layout-allow-overflow
+        width="1280"
+        height="720"
+      ></canvas>
+      <canvas
+        id="pixels"
+        class="clip"
+        data-start="0"
+        data-duration="4"
+        data-track-index="3"
+        data-layout-allow-overflow
+        width="144"
+        height="96"
+      ></canvas>
+      <img
+        id="astronaut"
+        class="clip layer"
+        data-start="0"
+        data-duration="4"
+        data-track-index="4"
+        data-layout-allow-overflow
+        src="cutouts/astronaut.trim.png"
+        alt=""
+      />
+      <div id="title" class="clip" data-start="0" data-duration="4" data-track-index="5">
+        Background removal<br />layered in HyperFrames
+      </div>
+      <div id="credit" class="clip" data-start="0" data-duration="4" data-track-index="6">
+        Cutouts: rembg (MIT) + U²-Net (Apache-2.0)
+      </div>
+    </div>
+    <script>
+      const FPS = 30;
+      const F = HFGsapFrame;
+      const tl = F.createRootTimeline(gsap, { fps: FPS, durationFrames: 120 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.from(
+        "#title",
+        { y: 40, opacity: 0, duration: F.frames(18, FPS), ease: "power3.out" },
+        F.frames(4, FPS),
+      );
+      tl.from("#credit", { opacity: 0, duration: F.frames(12, FPS) }, F.frames(16, FPS));
+      // Hold render and check until the cutouts are decoded and on the GPU.
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.cutouts = new Promise((resolve, reject) => {
+        window.__cutoutsDone = { resolve, reject };
+      });
+    </script>
+    <script type="module">
+      import * as THREE from "./lib/three.module.js";
+      import * as pixelfx from "./lib/pixelfx/core/index.js";
+      import * as nova from "./lib/pixelfx/fx/ice/frost-nova.js";
+      import { addPixelfxTrack } from "./pixelfx-frame.js";
+      import * as C from "./cutout-frame.js";
+
+      const W = 1280;
+      const H = 720;
+      const ease = gsap.parseEase("power2.inOut");
+      const out3 = gsap.parseEase("power3.out");
+      const camA = { x: -70, y: 10, zoom: 1.0 };
+      const camB = { x: 90, y: -16, zoom: 1.08 };
+      const $ = (id) => document.getElementById(id);
+
+      // Three.js layer: the coffee cutout as a textured plane turning in 3D.
+      const renderer = new THREE.WebGLRenderer({
+        canvas: $("stage"),
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setPixelRatio(1);
+      renderer.setSize(W, H, false);
+      renderer.setClearColor(0x000000, 0);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, W / H, 0.1, 100);
+      camera.position.set(0, 0, 8);
+      const pivot = new THREE.Group();
+      pivot.position.set(-1.2, -0.2, 0);
+      scene.add(pivot);
+
+      let L = null; // layout once the manifest is in
+      const draw = (t, p) => {
+        if (!L) return;
+        const cam = C.lerpCam(camA, camB, ease(p));
+        // Background plate and the rocket cut from it share depth 0.15, so the
+        // rocket sits exactly in its hole until it lifts off its own plate.
+        $("plate").style.transform = C.parallaxTransform(0.15, cam);
+        const lift = gsap.utils.clamp(0, 1, (t - 0.4) / 3.4);
+        $("rocket").style.transform = C.parallaxTransform(0.15, cam, {
+          y: -720 * lift * lift,
+        });
+        // Mid layer (Three.js): parallax via the 3D camera, spin on Y.
+        const mid = C.parallax(0.5, cam);
+        camera.position.set(-mid.x / 160, mid.y / 160, 8 / mid.scale);
+        pivot.rotation.y = -0.9 + p * 1.8;
+        pivot.position.y = -0.2 + Math.sin(p * Math.PI) * 0.25;
+        renderer.render(scene, camera);
+        // Character: walks in from the right with a step bob, depth 1.
+        const walk = out3(gsap.utils.clamp(0, 1, t / 2.4));
+        const bob = -Math.abs(Math.sin(t * Math.PI * 3)) * 10 * (1 - walk);
+        $("astronaut").style.transform = C.parallaxTransform(1, cam, {
+          x: (1 - walk) * 620,
+          y: bob,
+        });
+        $("pixels").style.transform = C.parallaxTransform(1, cam);
+      };
+      HFGsapFrame.addRenderTrack(tl, draw);
+
+      try {
+        const cuts = await C.loadCutouts("cutouts/manifest.json");
+        // Plate and full-frame rocket cutout cover the stage together.
+        const rocket = cuts.get("rocket");
+        const cover = Math.max((W + 260) / rocket.width, (H + 120) / rocket.height);
+        for (const id of ["plate", "rocket"]) {
+          C.placeElement($(id), {
+            left: (W - rocket.width * cover) / 2,
+            top: (H - rocket.height * cover) / 2 + 40,
+            width: rocket.width * cover,
+            height: rocket.height * cover,
+            origin: { x: (rocket.width * cover) / 2, y: (rocket.height * cover) / 2 },
+          });
+        }
+        const astro = cuts.get("astronaut");
+        const astroRect = C.fitSprite(astro, { x: 900, y: H + 30, height: 560 });
+        C.placeElement($("astronaut"), astroRect);
+        // Aim the frost burst at the character's centre of mass.
+        const core = C.anchorOnStage(astro, astroRect, "centroid");
+        Object.assign($("pixels").style, { left: `${core.x - 216}px`, top: `${core.y - 144}px` });
+
+        const tex = await new THREE.TextureLoader().loadAsync(cuts.url("coffee"));
+        pivot.add(C.cutoutPlane(THREE, tex, cuts.get("coffee"), { height: 2.2, anchor: "center" }));
+        await C.imagesReady(["plate", "rocket", "astronaut"].map($));
+
+        addPixelfxTrack(tl, {
+          pixelfx,
+          fx: nova,
+          ctx: $("pixels").getContext("2d"),
+          fps: FPS,
+          start: 2.2,
+          duration: 1.8,
+          bg: null,
+        });
+        L = true;
+        draw(tl.time(), tl.time() / tl.duration());
+        window.__cutoutsDone.resolve();
+      } catch (err) {
+        window.__cutoutsDone.reject(err);
+        throw err;
+      }
+    </script>
+  </body>
+</html>
