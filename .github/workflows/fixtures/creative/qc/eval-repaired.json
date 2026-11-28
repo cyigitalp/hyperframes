@@ -1,0 +1,57 @@
+{
+  "evaluator": "fixture: honest look at the repaired cut (contact and hook sheets)",
+  "dimensions": {
+    "hook": {
+      "score": 4,
+      "evidence": [
+        { "t": 0, "note": "frame 0 is a real espresso with steam already rising under a push-in" },
+        { "t": 0.3, "note": "REAL ESPRESSO stamp slams in before 0.4 s" }
+      ]
+    },
+    "story": {
+      "score": 3,
+      "notes": "three beats; the link between them is thin",
+      "evidence": [
+        { "t": 3.2, "note": "cut to a cat staring: someone is watching" },
+        { "t": 8.0, "note": "Pip's double-take pays off the watcher" }
+      ]
+    },
+    "visual-engagement": {
+      "score": 4,
+      "evidence": [
+        { "t": 0.5, "note": "authentic photo with animated steam and a stamp" },
+        { "t": 4.5, "note": "cut-out cat on its own plane, soft wall, drifting dust" }
+      ]
+    },
+    "animation": {
+      "score": 4,
+      "evidence": [
+        { "t": 6.6, "note": "walk cycle with counter-swing and a fist pump" },
+        { "t": 8.0, "note": "double-take: squash, eye pop, tuft follow-through" }
+      ]
+    },
+    "character": {
+      "score": 4,
+      "evidence": [
+        { "t": 6.4, "note": "smug strut" },
+        { "t": 8.2, "note": "worried eyes after the take" }
+      ]
+    },
+    "cinematography": {
+      "score": 3,
+      "notes": "scene C is locked off",
+      "evidence": [
+        { "t": 1.5, "note": "push-in with a slow roll on the espresso" },
+        { "t": 4.5, "note": "tracking dolly with parallax and soft background" }
+      ]
+    },
+    "humor": {
+      "score": 3,
+      "evidence": [{ "t": 8.0, "note": "the double-take when he realises the cat is watching" }]
+    },
+    "pacing": {
+      "score": 3,
+      "evidence": [{ "t": 3, "note": "a cut every 3 s, each to a new subject" }]
+    }
+  }
+}

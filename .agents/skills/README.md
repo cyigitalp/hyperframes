@@ -134,3 +134,19 @@ animation, sound, render, QC and delivery of the MP4, thumbnail, title and
 description. `production.mjs` keeps resumable checkpoints in the video
 project (stages, scenes and assets hashed, so nothing finished is redone or
 paid for twice) and refuses Higgsfield spend past the owner's budget.
+
+## Creative direction, characters, camera and QC
+
+`visual-director` picks each scene's medium from what the viewer must believe:
+real, commercially licensed evidence for real things (`photo-search.mjs`:
+Openverse, Wikimedia Commons, NASA, with credits), labeled recreations,
+layered photo scenes and one art direction; `plan-check.mjs` lints the scene
+plan. `character-animation` performs layered 2D rigs (`rig-frame.js`: walk,
+talk with visemes, blink, look, expressions, gestures, reach with IK, takes,
+follow-through) with the original character Pip. `cinematography` moves a
+virtual camera through layers at depths (`camera-frame.js`: dolly, track,
+push-in, parallax, rack focus, dolly zoom, handheld). `creative-qc` scores the
+rendered video (`cqc.mjs`: measured holds, rigid slides, camera-only moves,
+hook, audio; evaluator scores with timestamped evidence; a gate that refuses
+inflated scores) and repairs weak scenes by partial render and splice.
+Demos and the QC repair loop run in CI from `.github/workflows/fixtures/creative/`.

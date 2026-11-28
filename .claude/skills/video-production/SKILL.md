@@ -44,6 +44,24 @@ narration estimate, before the first paid call.
 Production files live in `<project>/production/`; the HyperFrames project is
 `<project>` itself (`npx hyperframes init`).
 
+## Skills per stage
+
+Load these as the stage needs them; each is the source of truth for its tool.
+
+- `visual-director` at **direction**: evidence and medium per scene, licensed
+  photos (`photo-search.mjs`), the look; `plan-check.mjs` must report 0 errors
+  before **narration**.
+- `character-animation` for any scene with a character (`rig-frame.js`
+  presets, never a still slid across the frame); `cinematography` for camera,
+  depth and parallax (`camera-frame.js`); `background-removal` for cut-outs.
+- `creative-qc` at **qc**: `cqc.mjs analyze` on the render, the evaluation,
+  `cqc.mjs gate --project`; repair the scenes it names.
+- `tools.md` for everything else (Higgsfield, Three.js, Poly Haven, data,
+  maps, sound).
+
+Reuse before building: `asset <key>` for media, installed registry blocks and
+earlier scenes' rigs, characters and camera tracks for components.
+
 ## Roles
 
 Fable 5.2 does creative direction, planning and the final evaluation; Opus
@@ -52,36 +70,43 @@ When this session's Agent tool accepts `model: "fable"`, run `direction` and
 the evaluation in `qc` as a Fable subagent; otherwise do them here. The
 handoff is files only, never the conversation:
 
-- **To Fable (direction)**: brief.md, research.md, script.md,
-  `tools.md`. It returns direction.md (look, tone, music, camera language)
-  and scenes.json: per scene `id`, narration line range, what the viewer
-  must believe, tools, assets with source (find / generate / build), camera,
+- **To Fable (direction)**: brief.md, research.md, script.md, `tools.md` and
+  the `visual-director` skill. It returns direction.md (look, tone, music,
+  camera language) and scenes.json: per scene `id`, narration line range,
+  `hook` (first scene), `evidence`, treatment, `layers` with provenance and
+  licence, `camera` with its motivation, `character.actions`, `gag`,
   transition in.
-- **To Fable (evaluation)**: script.md, scenes.json, the snapshot
-  contact sheet and `REVIEW.md`. It returns a pass, or a list of scene ids
-  with one concrete fix each.
+- **To Fable (evaluation)**: script.md, scenes.json, `production/qc/`
+  (review.json and its sheets) and `creative-qc/rubric.md`. It returns
+  production/qc/eval.json: scores with timestamped evidence, decisions on
+  the measured findings and new findings, each with a scene and one fix.
+
+Fable never sees a score it is asked to confirm; it scores from the sheets.
 
 ## Stages
 
-| Stage     | Do                                                                                                                                                                | Output in `production/`             |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| brief     | the approved idea, audience, target length, budget                                                                                                                | brief.md                            |
-| research  | verify every claim the video makes with WebSearch; two sources for anything surprising; drop what can't be sourced                                                | research.md (claim → source URL)    |
-| script    | American English, spoken rhythm, a hook that lands in the first 1–3 s, a joke or turn every 20–30 s, ~150 words a minute; only sourced claims                     | script.md                           |
-| direction | creative direction and the scene plan (Fable, above); tools from `tools.md`                                                                                       | direction.md, scenes.json           |
-| narration | estimate, `spend`, then Higgsfield `generate_audio` (`text2speech_v2`, `elevenlabs`); register it with `asset`; word timings with `npx hyperframes transcribe`    | `assets/narration.*`, timings       |
-| assets    | per asset in scenes.json: `asset <key>` first (exit 0 = reuse), else find or generate it, then `asset <key> --path ... --source ... --licence ... --credits ...`  | files under `assets/`, `CREDITS.md` |
-| scenes    | build each scene as its own sub-composition timed to its narration words; `scene <id> built`, then `npx hyperframes check` on it; `ok` or `failed` with the error | `compositions/*.html`               |
-| edit      | master timeline, transitions (`motion-doctrine`, registry), music bed and SFX via `sound-effects` with the narration as the reference                             | `index.html`, mix files             |
-| render    | `npx hyperframes render`                                                                                                                                          | `renders/final.mp4`                 |
-| qc        | `check`, `snapshot --review` + `REVIEW.md`, `sfx.sh check --render`, then the evaluation                                                                          | `REVIEW.md`                         |
-| deliver   | thumbnail, title, description, `production.mjs deliver` must exit 0                                                                                               | delivery.json                       |
+| Stage     | Do                                                                                                                                                               | Output in `production/`             |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| brief     | the approved idea, audience, target length, budget                                                                                                               | brief.md                            |
+| research  | verify every claim the video makes with WebSearch; two sources for anything surprising; drop what can't be sourced                                               | research.md (claim → source URL)    |
+| script    | American English, spoken rhythm, a hook that lands in the first 1–3 s, a joke or turn every 20–30 s, ~150 words a minute; only sourced claims                    | script.md                           |
+| direction | creative direction and the scene plan (Fable, above) with `visual-director`; `plan-check.mjs scenes.json` 0 errors                                               | direction.md, scenes.json           |
+| narration | estimate, `spend`, then Higgsfield `generate_audio` (`text2speech_v2`, `elevenlabs`); register it with `asset`; word timings with `npx hyperframes transcribe`   | `assets/narration.*`, timings       |
+| assets    | per asset in scenes.json: `asset <key>` first (exit 0 = reuse), else find or generate it, then `asset <key> --path ... --source ... --licence ... --credits ...` | files under `assets/`, `CREDITS.md` |
+| scenes    | build each scene as its own sub-composition timed to its narration words (rigs, camera, layers); `scene <id> built`, `npx hyperframes check`, `ok` or `failed`   | `compositions/*.html`               |
+| edit      | master timeline, transitions (`motion-doctrine`, registry), music bed and SFX via `sound-effects` with the narration as the reference                            | `index.html`, mix files             |
+| render    | `npx hyperframes render`                                                                                                                                         | `renders/final.mp4`                 |
+| qc        | `check`, `sfx.sh check --render`, `cqc.mjs analyze`, the evaluation (Fable, above), `cqc.mjs gate --project`; repair until it passes                             | qc/review.json, qc/gate.json        |
+| deliver   | thumbnail, title, description, `production.mjs deliver` must exit 0                                                                                              | delivery.json                       |
 
 ## Repair, don't rebuild
 
-A failed check, a review note or an evaluation fix names scenes. For each:
-`scene <id> failed --note "<why>"`, fix only that composition, check it, mark
-it `ok`, then re-run `edit` (if the timeline changed), `render` and `qc`.
+A failed check or the creative QC gate names scenes (`gate --project` marks
+them `failed`). For each: fix only that composition, check it, mark it `ok`.
+If the timeline did not change, render only those ranges
+(`render --start --end`), `cqc.mjs splice` them into the cut and `compare`
+to prove the other scenes are untouched; otherwise re-run `edit` and
+`render`. Then `qc` again on the new file, scored afresh.
 Never regenerate an asset that `asset <key>` reports `ok`; a generated asset
 that is wrong gets one corrected prompt, and its cost is booked again. After
 three failed attempts on one scene, replace its approach with a cheaper tool
@@ -89,12 +114,18 @@ from `tools.md` rather than retrying.
 
 ## Standards that gate delivery
 
+`deliver` refuses a video without a passing production/qc/gate.json for that
+exact file. A successful render is not a creative pass.
+
 - Hook on screen and in the voice within 3 s; no logo or title card first.
 - Every scene moves with intent: a camera move, a reveal or a cut on the
   narration; no static slides, no idle wobble.
-- Mixed media: real photos or footage, generated images, 3D and motion
-  graphics across the film, chosen per beat, not code-only graphics.
+- Mixed media chosen per beat, not code-only graphics: real evidence for
+  real things, labeled recreations, characters that act, a motivated camera.
 - Narration is the clock: scene and cue times come from its word timings.
+- The narrator is picked per video from `list_voices` for its tone and
+  audience; no voice is a house default, and an earlier video's voice is
+  reused only when the owner asks for it.
 - Music sits at least 6 LU under the narration and SFX never mask a word
   (`sfx.sh check` measures both).
 - Thumbnail: 1280×720, at most three words, readable at phone size, built as

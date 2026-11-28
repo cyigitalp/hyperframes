@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #14121a;
+      }
+      #root {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #14121a;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #14121a;
+      }
+      .plane {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1280px;
+        height: 720px;
+      }
+      .photo {
+        position: absolute;
+        left: -40px;
+        top: -88px;
+        width: 1360px;
+        height: 907px;
+      }
+      #title {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font: 900 84px/1 sans-serif;
+        letter-spacing: 0.06em;
+        color: #fff8ea;
+      }
+      #stamp {
+        position: absolute;
+        left: 120px;
+        top: 90px;
+        padding: 14px 22px;
+        font: 900 44px/1 sans-serif;
+        color: #23212e;
+        background: #ffd24a;
+        border: 4px solid #23212e;
+        border-radius: 8px;
+      }
+      .wall {
+        position: absolute;
+        inset: -40px;
+        background: url("textures/brick.png") center / cover no-repeat;
+        filter: sepia(0.8) saturate(1.6) hue-rotate(-12deg) brightness(0.7) blur(1px);
+      }
+      #cat {
+        position: absolute;
+        left: 170px;
+        top: 150px;
+        width: 940px;
+      }
+      #floor {
+        position: absolute;
+        left: 0;
+        top: 600px;
+        width: 1280px;
+        height: 120px;
+        background: #4a2a17;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="9"
+      data-width="1280"
+      data-height="720"
+    >
+      <div id="sceneA" class="clip scene" data-start="0" data-duration="3" data-track-index="0">
+        <div id="aTitle" class="plane"><div id="title">THE COFFEE STORY</div></div>
+        <div id="aPhoto" class="plane"><img class="photo" src="textures/coffee.png" alt="" /></div>
+        <svg
+          id="aSteam"
+          class="plane"
+          viewBox="0 0 1280 720"
+          style="filter: blur(7px); mix-blend-mode: screen"
+        ></svg>
+      </div>
+      <div id="stamp" class="clip" data-start="0" data-duration="3" data-track-index="1">
+        REAL ESPRESSO
+      </div>
+      <div id="sceneB" class="clip scene" data-start="3" data-duration="3" data-track-index="0">
+        <div id="bWall" class="plane"><div class="wall"></div></div>
+        <div id="bCat" class="plane"><img id="cat" src="cutouts/chelsea.trim.png" alt="" /></div>
+        <svg id="bDust" class="plane" viewBox="0 0 1280 720"></svg>
+      </div>
+      <div id="sceneC" class="clip scene" data-start="6" data-duration="3" data-track-index="0">
+        <div class="plane"><div class="wall" style="filter: sepia(0.5) brightness(0.6)"></div></div>
+        <div id="floor"></div>
+        <svg id="cActor" class="plane" viewBox="0 0 1280 720"></svg>
+      </div>
+    </div>
+    <script>
+      const FPS = 30;
+      const tl = HFGsapFrame.createRootTimeline(gsap, { fps: FPS, durationFrames: 270 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.qc = new Promise((resolve, reject) => {
+        window.__qcDone = { resolve, reject };
+      });
+    </script>
+    <script type="module">
+      // FIXED = false is the deliberately weak cut that creative QC must catch:
+      // scene A opens on a static title card, scene C slides a still picture of
+      // the character across the frame. FIXED = true is the corrected cut.
+      // Scene B is identical in both and must survive the repair untouched.
+      import * as R from "./rig-frame.js";
+      import * as C from "./camera-frame.js";
+      import { pip } from "./characters/pip.js";
+      const FIXED = false;
+      const $ = (id) => document.getElementById(id);
+      const NS = "http://www.w3.org/2000/svg";
+      try {
+        const clamp01 = (v) => Math.min(1, Math.max(0, v));
+        const out3 = (p) => 1 - (1 - p) ** 3;
+
+        // Scene A
+        $("aTitle").style.display = FIXED ? "none" : "block";
+        $("aPhoto").style.display = FIXED ? "block" : "none";
+        $("aSteam").style.display = FIXED ? "block" : "none";
+        $("stamp").style.display = FIXED ? "block" : "none";
+        const wisps = [0, 1, 2].map((i) => {
+          const p = document.createElementNS(NS, "path");
+          p.setAttribute("fill", "none");
+          p.setAttribute("stroke", "#fff");
+          p.setAttribute("stroke-width", "26");
+          p.setAttribute("stroke-linecap", "round");
+          p.setAttribute("opacity", "0.5");
+          $("aSteam").appendChild(p);
+          return { el: p, x: 570 + i * 35, ph: i * 2 };
+        });
+        const camA = C.cameraTrack([
+          { t: 0, z: -40, roll: -2 },
+          { t: 3, z: 140, roll: 1, ease: "power2.out" },
+        ]);
+        const drawA = (t) => {
+          if (!FIXED) return; // the weak version: a title card that never moves
+          for (const w of wisps) {
+            let d = "";
+            for (let i = 0; i <= 12; i++) {
+              const k = i / 12;
+              d += `${i ? "L" : "M"}${(w.x + Math.sin(k * 5 + t * 2.4 + w.ph) * 18 * (0.4 + k)).toFixed(1)},${(240 - k * 280).toFixed(1)}`;
+            }
+            w.el.setAttribute("d", d);
+          }
+          const s = out3(clamp01((t - 0.15) / 0.25));
+          // a straight slam: the layout audit probes text along its unrotated box
+          $("stamp").style.transform = `scale(${(2.2 - 1.2 * s).toFixed(3)})`;
+          $("stamp").style.opacity = String(clamp01((t - 0.15) / 0.08));
+          C.applyLayers(
+            [
+              { el: $("aPhoto"), depth: 1000 },
+              { el: $("aSteam"), depth: 900 },
+            ],
+            camA(t),
+            { width: 1280, height: 720 },
+          );
+        };
+
+        // Scene B (identical in both versions)
+        const rnd = HFGsapFrame.seededRandom(8);
+        const motes = Array.from({ length: 30 }, () => {
+          const c = document.createElementNS(NS, "circle");
+          c.setAttribute("r", (1.5 + rnd() * 3).toFixed(1));
+          c.setAttribute("fill", "rgba(255,225,180,0.6)");
+          $("bDust").appendChild(c);
+          return { el: c, x: rnd() * 1280, y: rnd() * 760, v: 10 + rnd() * 20 };
+        });
+        const camB = C.cameraTrack([
+          { t: 0, z: -100, x: -80, focus: 1000, aperture: 5 },
+          { t: 3, z: 160, x: 90, ease: "sine.inOut" },
+        ]);
+        const drawB = (t) => {
+          for (const m of motes) {
+            m.el.setAttribute("cx", m.x.toFixed(1));
+            m.el.setAttribute("cy", (m.y - m.v * t).toFixed(1));
+          }
+          C.applyLayers(
+            [
+              { el: $("bWall"), depth: 2400 },
+              { el: $("bCat"), depth: 1000 },
+              { el: $("bDust"), depth: 700 },
+            ],
+            camB(t),
+            { width: 1280, height: 720, maxBlur: 10 },
+          );
+        };
+
+        // Scene C
+        const rig = R.createRig(pip(), { place: { x: 160, y: 640, scale: 0.7 } });
+        if (FIXED) {
+          // walks in pleased with himself, then realises the cat from scene B
+          // is watching him: a double-take toward the camera side it sat on
+          rig
+            .add(R.walk({ start: 0, steps: 4, stepDur: 0.4, stride: 130, dir: 1 }))
+            .add(R.blink({ start: 0, end: 3, seed: 6 }))
+            .add(R.expression({ start: 0, emotion: "smug" }))
+            .add(R.gesture({ start: 0.5, type: "fist-pump", side: "L", hold: 0.35 }))
+            .add(R.take({ start: 1.62, kind: "double-take", dir: -1 }))
+            .add(R.expression({ start: 2.15, emotion: "worried" }))
+            .follow("tuft", "head", { gain: 1.4 });
+        }
+        const view = R.mountRig($("cActor"), rig, { idPrefix: "pip" });
+        const drawC = (t) => {
+          if (FIXED) view.apply(t);
+          else {
+            // the weak version: the whole character as one still picture, slid across
+            view.apply(0);
+            view.root.setAttribute(
+              "transform",
+              `translate(${(600 * out3(clamp01(t / 2.4))).toFixed(1)} 0)`,
+            );
+          }
+        };
+
+        HFGsapFrame.addRenderTrack(tl, (t) => drawA(Math.min(t, 3)), { start: 0, duration: 3 });
+        HFGsapFrame.addRenderTrack(tl, (t) => drawB(t), { start: 3, duration: 3 });
+        HFGsapFrame.addRenderTrack(tl, (t) => drawC(t), { start: 6, duration: 3 });
+        await Promise.all([...document.querySelectorAll("img")].map((i) => i.decode()));
+        drawA(0);
+        drawB(0);
+        drawC(0);
+        window.__qcDone.resolve();
+      } catch (err) {
+        window.__qcDone.reject(err);
+        throw err;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+[
+  { "id": "a_hook", "start": 0, "end": 3, "believe": "This is a real espresso, and it is alive." },
+  { "id": "b_cat", "start": 3, "end": 6, "believe": "Someone is watching it." },
+  { "id": "c_walk", "start": 6, "end": 9, "believe": "Our host comes to get it." }
+]

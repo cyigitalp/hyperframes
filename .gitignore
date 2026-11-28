@@ -147,6 +147,10 @@ packages/studio/data/
 !.claude/skills/background-removal
 !.claude/skills/sound-effects
 !.claude/skills/video-production
+!.claude/skills/visual-director
+!.claude/skills/character-animation
+!.claude/skills/cinematography
+!.claude/skills/creative-qc
 
 .agents/*
 !.agents/skills
@@ -171,6 +175,10 @@ packages/studio/data/
 !.agents/skills/background-removal
 !.agents/skills/sound-effects
 !.agents/skills/video-production
+!.agents/skills/visual-director
+!.agents/skills/character-animation
+!.agents/skills/cinematography
+!.agents/skills/creative-qc
 skills-lock.json
 
 # Lemo-Opuscar style guides fetched per film (CC BY-NC, never committed)

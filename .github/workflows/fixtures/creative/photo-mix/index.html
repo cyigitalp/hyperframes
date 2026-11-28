@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="lib/gsap.min.js"></script>
+    <script src="gsap-frame.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #2a170c;
+      }
+      #root {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #2a170c;
+      }
+      .plane {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1280px;
+        height: 720px;
+      }
+      .photo {
+        position: absolute;
+        left: -40px;
+        top: -88px;
+        width: 1360px;
+        height: 907px;
+      }
+      #steam {
+        filter: blur(7px);
+        mix-blend-mode: screen;
+      }
+      .tag {
+        font: 800 26px/1 sans-serif;
+        letter-spacing: 0.02em;
+        fill: #23212e;
+      }
+      .tagbox {
+        fill: #fff8ea;
+        stroke: #23212e;
+        stroke-width: 3;
+      }
+      .ink {
+        fill: none;
+        stroke: #fff8ea;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #badge {
+        position: absolute;
+        left: 28px;
+        top: 24px;
+        padding: 8px 14px;
+        font: 800 20px/1 sans-serif;
+        letter-spacing: 0.08em;
+        color: #23212e;
+        background: #ffd24a;
+        border: 3px solid #23212e;
+        border-radius: 6px;
+      }
+      #credit {
+        position: absolute;
+        right: 22px;
+        bottom: 16px;
+        padding: 6px 12px;
+        font: 600 19px/1.2 sans-serif;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="6"
+      data-width="1280"
+      data-height="720"
+    >
+      <div
+        id="table"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="0"
+        data-layout-allow-overflow
+      >
+        <img class="photo" src="cutouts/coffee.plate.jpg" alt="" />
+      </div>
+      <div
+        id="cup"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="1"
+        data-layout-allow-overflow
+      >
+        <img class="photo" src="cutouts/coffee.png" alt="" />
+      </div>
+      <svg
+        id="crema"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="2"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      >
+        <g id="swirl" opacity="0.35" style="mix-blend-mode: overlay">
+          <path
+            d="M600,232 m-6,0 a6,5 0 1,1 12,0 a18,14 0 1,1 -30,0 a34,26 0 1,1 58,0 a52,40 0 1,1 -92,0 a70,54 0 1,1 124,0"
+            fill="none"
+            stroke="#fff3d6"
+            stroke-width="6"
+          />
+        </g>
+      </svg>
+      <svg
+        id="steam"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="3"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      ></svg>
+      <svg
+        id="notes"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="4"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      ></svg>
+      <svg
+        id="actor"
+        class="clip plane"
+        data-start="0"
+        data-duration="6"
+        data-track-index="5"
+        data-layout-allow-overflow
+        viewBox="0 0 1280 720"
+      ></svg>
+      <div id="badge" class="clip" data-start="0" data-duration="6" data-track-index="6">
+        REAL PHOTO
+      </div>
+      <div id="credit" class="clip" data-start="0" data-duration="6" data-track-index="7">
+        Photo: Rachel Michetti, CC0 · cutout: rembg U²-Net
+      </div>
+    </div>
+    <script>
+      const FPS = 30;
+      const tl = HFGsapFrame.createRootTimeline(gsap, { fps: FPS, durationFrames: 180 });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.photo = new Promise((resolve, reject) => {
+        window.__photoDone = { resolve, reject };
+      });
+    </script>
+    <script type="module">
+      import * as R from "./rig-frame.js";
+      import * as C from "./camera-frame.js";
+      import { pip } from "./characters/pip.js";
+      const $ = (id) => document.getElementById(id);
+      const NS = "http://www.w3.org/2000/svg";
+      const el = (tag, attrs, parent) => {
+        const e = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        parent.appendChild(e);
+        return e;
+      };
+      try {
+        // Steam: three wisps rising off the crema, plus one that swerves at Pip
+        // (the gag). Each is a sine path rebuilt from t, so it is seekable.
+        const wisps = [
+          { x: 590, w: 16, sp: 70, ph: 0, a: 0.55 },
+          { x: 640, w: 22, sp: 55, ph: 2, a: 0.45 },
+          { x: 560, w: 12, sp: 85, ph: 4, a: 0.4 },
+        ].map((d) => ({
+          ...d,
+          el: el(
+            "path",
+            { fill: "none", stroke: "#fff", "stroke-width": 26, "stroke-linecap": "round" },
+            $("steam"),
+          ),
+        }));
+        const gag = el(
+          "path",
+          {
+            fill: "none",
+            stroke: "#fff",
+            "stroke-width": 34,
+            "stroke-linecap": "round",
+            opacity: 0,
+          },
+          $("steam"),
+        );
+        const wispPath = (x0, y0, t, w, ph, len, bend = 0) => {
+          let d = "";
+          for (let i = 0; i <= 14; i++) {
+            const k = i / 14;
+            const y = y0 - k * len;
+            const x = x0 + Math.sin(k * 5 + t * 2.2 + ph) * w * (0.4 + k) + bend * k * k;
+            d += `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+          }
+          return d;
+        };
+
+        // Annotations: ink arrows that draw on, with paper tags.
+        const notes = [
+          { t: 0.35, text: "crema", tag: [380, 120], path: "M480,140 C520,150 550,175 575,205" },
+          {
+            t: 0.95,
+            text: "porcelain",
+            tag: [150, 360],
+            path: "M280,360 C320,320 340,280 356,240",
+          },
+          { t: 1.55, text: "spoon", tag: [640, 600], path: "M700,600 C720,580 740,566 760,552" },
+        ].map((n) => {
+          const g = el("g", { opacity: 0 }, $("notes"));
+          const p = el("path", { d: n.path, class: "ink" }, g);
+          const len = p.getTotalLength();
+          p.setAttribute("stroke-dasharray", len);
+          const head = el("circle", { r: 7, fill: "#fff8ea" }, g);
+          const end = p.getPointAtLength(len);
+          head.setAttribute("cx", end.x);
+          head.setAttribute("cy", end.y);
+          const w = n.text.length * 17 + 30;
+          el(
+            "rect",
+            { x: n.tag[0], y: n.tag[1] - 22, width: w, height: 46, rx: 8, class: "tagbox" },
+            g,
+          );
+          const tx = el("text", { x: n.tag[0] + 15, y: n.tag[1] + 10, class: "tag" }, g);
+          tx.textContent = n.text;
+          return { ...n, g, p, len, head };
+        });
+
+        // Pip walks in along the saucer, sniffs, gets a face full of steam.
+        const rig = R.createRig(pip(), { place: { x: 1390, y: 676, scale: 0.5 } })
+          .add(R.walk({ start: 0, steps: 4, stepDur: 0.45, stride: 82, dir: -1 }))
+          .add(R.blink({ start: 0, end: 6, seed: 2 }))
+          .add(R.look({ start: 1.85, dx: -0.9, dy: -0.6 }))
+          .add(R.expression({ start: 2.0, emotion: "smug" }))
+          .add(R.talk({ words: [["mmm", 2.15, 2.75]] }))
+          .add(R.take({ start: 3.15, kind: "jolt" }))
+          .add(R.expression({ start: 4.45, emotion: "happy" }))
+          .add(R.gesture({ start: 4.5, type: "fist-pump", side: "L", hold: 0.7 }))
+          .follow("tuft", "head", { gain: 1.6 });
+        const view = R.mountRig($("actor"), rig, { idPrefix: "pip" });
+
+        const cam = C.cameraTrack(
+          C.sequence(
+            [{ t: 0, z: -70, roll: -2.5, x: 10 }],
+            [{ t: 3.1, z: 40, roll: 0, x: 60, y: 10, ease: "sine.inOut" }],
+            C.shots.punchIn({ t: 3.3, amount: 0.08 }),
+            [{ t: 6, z: 80, roll: 1.2, x: 80, y: 10, zoom: 1.05, ease: "power2.inOut" }],
+          ),
+        );
+        const layers = [
+          { el: $("table"), depth: 1060 },
+          { el: $("cup"), depth: 1000 },
+          { el: $("crema"), depth: 1000 },
+          { el: $("steam"), depth: 900 },
+          { el: $("notes"), depth: 1000 },
+          { el: $("actor"), depth: 980 },
+        ];
+        const out3 = (p) => 1 - (1 - p) ** 3;
+        const clamp01 = (v) => Math.min(1, Math.max(0, v));
+        const draw = (t) => {
+          for (const w of wisps) {
+            w.el.setAttribute("d", wispPath(w.x, 240, t, w.w, w.ph, 260 + Math.sin(t + w.ph) * 30));
+            w.el.setAttribute("opacity", (w.a * clamp01(t / 0.3 + 0.6)).toFixed(3));
+          }
+          // the gag wisp peels off the cup and reaches Pip's face at 3.15
+          const g = out3(clamp01((t - 2.5) / 0.65));
+          const [hx, hy] = rig.pointOn(Math.min(t, 3.1), "head", [200, 170]);
+          const sx = 650;
+          const sy = 250;
+          const ex = sx + (hx - sx) * g;
+          const ey = sy + (hy - sy) * g;
+          const wob = Math.sin(t * 9) * 10;
+          gag.setAttribute(
+            "d",
+            `M${sx},${sy} Q${(sx + ex) / 2 + wob},${Math.min(sy, ey) - 140} ${ex.toFixed(1)},${ey.toFixed(1)}`,
+          );
+          gag.setAttribute(
+            "opacity",
+            (0.75 * Math.sin(Math.PI * clamp01((t - 2.45) / 1.5))).toFixed(3),
+          );
+          $("swirl").setAttribute("transform", `rotate(${(t * 14).toFixed(2)} 600 232)`);
+          for (const n of notes) {
+            const p = out3(clamp01((t - n.t) / 0.45));
+            n.g.setAttribute("opacity", clamp01((t - n.t) / 0.12).toFixed(3));
+            n.p.setAttribute("stroke-dashoffset", (n.len * (1 - p)).toFixed(1));
+            n.head.setAttribute("opacity", p > 0.95 ? 1 : 0);
+          }
+          view.apply(t);
+          C.applyLayers(layers, cam(t));
+        };
+        HFGsapFrame.addRenderTrack(tl, draw);
+        await Promise.all([...document.querySelectorAll("img")].map((i) => i.decode()));
+        draw(tl.time());
+        window.__photoDone.resolve();
+      } catch (err) {
+        window.__photoDone.reject(err);
+        throw err;
+      }
+    </script>
+  </body>
+</html>

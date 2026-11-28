@@ -22,7 +22,10 @@ through `production.mjs spend` first.
 | Higgsfield video     | a short live or character shot that motion graphics can't sell                                                | 5–10 s clips; most expensive item, use for key beats only  | `generate_video`                                          | paid |
 | Higgsfield narration | the voice: `generate_audio` with `model: "text2speech_v2"`, `variant: "elevenlabs"`, voice from `list_voices` | generated once, then never altered                         | —                                                         | paid |
 | Higgsfield music     | a bed when no free track fits: `suno_music`, instrumental                                                     | 15–360 s                                                   | —                                                         | paid |
-| Real photography     | authentic people, places, objects, archive moments                                                            | licence must allow commercial use; credit what asks for it | `/media-use` (asset search), Wikimedia Commons, Openverse | free |
+| Real photography     | authentic people, places, objects, archive moments                                                            | licence must allow commercial use; credit what asks for it | `visual-director` (`photo-search.mjs`), `/media-use`      | free |
+| Character rigs       | characters that walk, talk, emote, gesture, react and hold props                                              | 2D layered rigs; real people only from their own footage   | `character-animation` (`rig-frame.js`)                    | free |
+| Virtual camera       | dolly, track, push-in, parallax, rack focus, shake across layered planes or Three.js                          | needs layers at depths to read as space                    | `cinematography` (`camera-frame.js`)                      | free |
+| Creative QC          | scoring the render, finding weak scenes, partial re-render and splice                                         | ffmpeg; evaluation needs someone to look at the sheets     | `creative-qc` (`cqc.mjs`)                                 | free |
 | Transcribe           | word timings from the narration for timing and captions                                                       | local                                                      | `npx hyperframes transcribe`                              | free |
 
 Price every paid call with `estimate_image_cost`, `estimate_video_cost` or
@@ -34,14 +37,16 @@ production. Never use the paid `remove_background` when Rembg can do it.
 Ask what the beat must make the viewer believe, and take the cheapest tool
 that sells it:
 
-- **A fact that happened or a real thing**: real photography or archive,
-  cut out with Rembg and moved with GSAP (parallax, push-in), or a map or
-  chart when the fact is a place or a number.
+- **A fact that happened or a real thing**: real photography or archive
+  (`photo-search.mjs`), cut out with Rembg, layered with moving annotations
+  and effects under a motivated camera, or a map or chart when the fact is a
+  place or a number. A generated image of a real thing is labeled.
 - **A number**: data animation. **A place or a route**: map animation.
 - **An idea, a mechanism, a "what if"**: Three.js with Poly Haven props and
   light, or motion graphics from registry blocks.
-- **A character, a joke, a scene no camera caught**: Higgsfield image (then
-  Rembg + GSAP for cheap motion), Higgsfield video only for a key beat.
+- **A character, a joke, a scene no camera caught**: a rig performance
+  (`character-animation`; a Higgsfield image cut into rig parts when the look
+  needs it), Higgsfield video only for a key beat.
 - **Texture and era**: a Lemo-Opuscar style or PixelFX look across the film,
   not per scene.
 
