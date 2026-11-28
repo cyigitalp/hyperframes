@@ -3,8 +3,6 @@ name: Stale
 # Nudges, then closes, PRs and needs-info issues nobody has touched in two weeks.
 # Any push, comment or label change resets the clock. Rules: TRIAGE.md, "Stale PRs and issues".
 on:
-  schedule:
-    - cron: "17 9 * * *"
   workflow_dispatch:
 
 permissions:

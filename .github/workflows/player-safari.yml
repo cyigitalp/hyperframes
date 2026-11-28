@@ -12,8 +12,6 @@ on:
       - "packages/player/**"
       - "packages/core/src/runtime/**"
       - ".github/workflows/player-safari.yml"
-  schedule:
-    - cron: "23 7 * * *"
   # One film many times: a fault that shows once in fifty runs needs hundreds of runs to prove gone.
   workflow_dispatch:
     inputs:
