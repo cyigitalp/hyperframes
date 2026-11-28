@@ -6,7 +6,8 @@ name: Media deps
 # data-animation chart fixture (bar race, counter, delta, line reveal) and the
 # map-animation fixture (camera zoom, country highlight, great-circle route),
 # and a Poly Haven scene (glTF model, PBR material, HDRI) fetched through the
-# cached, md5-checked polyhaven-assets helper.
+# cached, md5-checked polyhaven-assets helper, and a background-removal
+# fixture (rembg + U^2-Net cutouts, plate fill, parallax layers).
 
 permissions:
   contents: read
@@ -35,6 +36,8 @@ on:
       - .github/workflows/fixtures/map-animation/**
       - .claude/skills/polyhaven-assets/**
       - .github/workflows/fixtures/polyhaven/**
+      - .claude/skills/background-removal/**
+      - .github/workflows/fixtures/background-removal/**
   pull_request:
     branches: [main]
     paths:
@@ -54,11 +57,13 @@ on:
       - .github/workflows/fixtures/map-animation/**
       - .claude/skills/polyhaven-assets/**
       - .github/workflows/fixtures/polyhaven/**
+      - .claude/skills/background-removal/**
+      - .github/workflows/fixtures/background-removal/**
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - id: bun
@@ -93,7 +98,7 @@ jobs:
           '
 
       - name: Frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs .claude/skills/background-removal/cutout-frame.test.mjs
 
       - name: Combined render (GSAP + Three.js + PixelFX)
         run: |
@@ -227,6 +232,48 @@ jobs:
           echo "rendered $frames frames"
           test "$frames" -eq 120
 
+      - name: Background removal caches (venv + model weights, processed cutouts)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/hyperframes/rembg
+            ~/.cache/hyperframes/cutouts
+          key: rembg-${{ runner.os }}-${{ hashFiles('.claude/skills/background-removal/requirements.txt', '.claude/skills/background-removal/cutout.py') }}
+          restore-keys: rembg-${{ runner.os }}-
+
+      - name: Background removal render (rembg cutouts, plate, parallax, Three.js, PixelFX)
+        run: |
+          set -euo pipefail
+          SK="$PWD/.claude/skills/background-removal"
+          W="$RUNNER_TEMP/background-removal"
+          IN="$RUNNER_TEMP/br-in"
+          mkdir -p "$W/lib/pixelfx" "$IN"
+          "$SK/cutout.sh" models
+          "$SK/cutout.sh" selftest
+          "$SK/cutout.sh" fetch
+          # Public-domain / CC0 photos bundled with scikit-image (a rembg dependency).
+          SKD=$("$HOME/.cache/hyperframes/rembg/venv/bin/python" -I -c 'import skimage,os;print(os.path.join(os.path.dirname(skimage.__file__),"data"))')
+          cp "$SKD"/astronaut.png "$SKD"/chelsea.png "$SKD"/coffee.png "$SKD"/rocket.jpg "$IN/"
+          "$SK/cutout.sh" run "$IN" --out "$W" --plate
+          # A clean project offline must come entirely from the cache: no download, no inference.
+          rm -rf "$W/cutouts"
+          "$SK/cutout.sh" run "$IN" --out "$W" --plate --offline | tee "$RUNNER_TEMP/br-rerun.log"
+          grep -q "0 inference(s), 4 cache hit(s)" "$RUNNER_TEMP/br-rerun.log"
+          "$SK/cutout.sh" verify "$W"
+          "$SK/cutout.sh" cache
+          cat "$W/cutouts/CREDITS.md"
+          cp .github/workflows/fixtures/background-removal/index.html "$SK/cutout-frame.js" "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js .claude/skills/gsap-hyperframes/pixelfx-frame.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js node_modules/three/build/three.module.js node_modules/three/build/three.core.js "$W/lib/"
+          cp -r node_modules/pixelfx/src/. "$W/lib/pixelfx/"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o background-removal.mp4
+          frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 background-removal.mp4)
+          echo "rendered $frames frames"
+          test "$frames" -eq 120
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -239,5 +286,7 @@ jobs:
             ${{ runner.temp }}/polyhaven/polyhaven.mp4
             ${{ runner.temp }}/polyhaven/polyhaven/manifest.json
             ${{ runner.temp }}/polyhaven/polyhaven/CREDITS.md
+            ${{ runner.temp }}/background-removal/background-removal.mp4
+            ${{ runner.temp }}/background-removal/cutouts/
             bun-lock-resolve.diff
           if-no-files-found: ignore
