@@ -1,0 +1,23 @@
+{
+  "fps": 30,
+  "duration": 4,
+  "narration": { "file": "audio/narration.wav", "start": 0.4 },
+  "music": { "sound": "bed/warm", "dur": 4 },
+  "mix": { "target_lufs": -14, "min_voice_margin_lu": 6 },
+  "library": {
+    "whoosh": { "want": "a fast whoosh", "align": "peak" },
+    "hit": { "want": "a heavy impact", "align": "peak", "visual": true },
+    "riser": { "bank": "riser/tension", "dur": 2.0, "align": "peak" },
+    "boing": { "want": "a cartoon boing", "align": "onset", "gain_db": -2 },
+    "shutter": { "want": "a camera shutter", "align": "peak", "gain_db": -4 }
+  },
+  "cues": [
+    { "id": "card-in", "use": "whoosh", "frame": 15 },
+    { "id": "title-slam", "use": "hit", "frame": 30 },
+    { "id": "snap", "use": "shutter", "frame": 60 },
+    { "id": "build", "use": "riser", "frame": 84 },
+    { "id": "drop", "use": "hit", "frame": 84, "seed": 1, "gain_db": 1 },
+    { "id": "logo-boing", "use": "boing", "frame": 102 }
+  ],
+  "beds": [{ "id": "room", "want": "room tone ambience", "from": 0, "to": 4 }]
+}
