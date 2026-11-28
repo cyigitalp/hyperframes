@@ -91,3 +91,12 @@ smooth fly-to camera between global and regional views. It ships
 `map-frame.js` (projections, country paths, routes, camera) with no
 dependency, and uses Natural Earth country data (public domain) from
 `vendor/natural-earth/`. Upstream commit and scope: `map-animation/UPSTREAM.md`.
+
+## Poly Haven assets
+
+`polyhaven-assets` brings free CC0 [Poly Haven](https://polyhaven.com) 3D
+models (glTF), PBR materials and HDRIs into Three.js compositions. It picks
+assets from scene requirements through the public API, sizes them to the
+shot, caches downloads by md5 outside the repo, copies them into the video
+project for offline rendering, and writes the "Powered by Poly Haven" credit
+the API terms ask for. Nothing downloaded is committed here.

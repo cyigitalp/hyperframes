@@ -4,7 +4,9 @@ name: Media deps
 # checkout with the pinned Bun, and that they render together in HyperFrames,
 # including the vendored Lemo-Opuscar CRT post (vendor/lemo-opuscar) and the
 # data-animation chart fixture (bar race, counter, delta, line reveal) and the
-# map-animation fixture (camera zoom, country highlight, great-circle route).
+# map-animation fixture (camera zoom, country highlight, great-circle route),
+# and a Poly Haven scene (glTF model, PBR material, HDRI) fetched through the
+# cached, md5-checked polyhaven-assets helper.
 
 permissions:
   contents: read
@@ -31,6 +33,8 @@ on:
       - .claude/skills/map-animation/**
       - vendor/natural-earth/**
       - .github/workflows/fixtures/map-animation/**
+      - .claude/skills/polyhaven-assets/**
+      - .github/workflows/fixtures/polyhaven/**
   pull_request:
     branches: [main]
     paths:
@@ -48,6 +52,8 @@ on:
       - .claude/skills/map-animation/**
       - vendor/natural-earth/**
       - .github/workflows/fixtures/map-animation/**
+      - .claude/skills/polyhaven-assets/**
+      - .github/workflows/fixtures/polyhaven/**
 
 jobs:
   verify:
@@ -87,7 +93,7 @@ jobs:
           '
 
       - name: Frame helper tests
-        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs
+        run: node --test .claude/skills/gsap-hyperframes/gsap-frame.test.mjs .claude/skills/gsap-hyperframes/pixelfx-frame.test.mjs .claude/skills/data-animation/data-frame.test.mjs .claude/skills/map-animation/map-frame.test.mjs .claude/skills/polyhaven-assets/polyhaven.test.mjs
 
       - name: Combined render (GSAP + Three.js + PixelFX)
         run: |
@@ -182,6 +188,45 @@ jobs:
           echo "rendered $frames frames"
           test "$frames" -eq 180
 
+      - name: Poly Haven download cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/hyperframes/polyhaven
+          key: polyhaven-${{ hashFiles('.github/workflows/fixtures/polyhaven/scene.json', '.claude/skills/polyhaven-assets/polyhaven.mjs') }}
+
+      - name: Poly Haven render (glTF model, PBR material, HDRI)
+        run: |
+          set -euo pipefail
+          PH="$PWD/.claude/skills/polyhaven-assets/polyhaven.mjs"
+          SCENE="$PWD/.github/workflows/fixtures/polyhaven/scene.json"
+          W="$RUNNER_TEMP/polyhaven"
+          T=node_modules/three
+          mkdir -p "$W/lib/three/build" "$W/lib/three/examples/jsm/loaders" "$W/lib/three/examples/jsm/utils" "$W/lib/pixelfx"
+          node "$PH" search models rubber duck --limit 3
+          # Pick and fetch from the live API (or the restored cache).
+          node "$PH" scene "$SCENE" --out "$W"
+          node "$PH" cache
+          # A clean project offline must come entirely from the cache.
+          rm -rf "$W/polyhaven"
+          node "$PH" scene "$SCENE" --out "$W" --offline
+          node "$PH" verify "$W"
+          cat "$W/polyhaven/CREDITS.md"
+          du -sh "$W/polyhaven"
+          cp .github/workflows/fixtures/polyhaven/index.html .claude/skills/polyhaven-assets/polyhaven-three.js "$W/"
+          cp .claude/skills/gsap-hyperframes/gsap-frame.js .claude/skills/gsap-hyperframes/pixelfx-frame.js "$W/"
+          cp node_modules/gsap/dist/gsap.min.js "$W/lib/"
+          cp $T/build/three.module.js $T/build/three.core.js "$W/lib/three/build/"
+          cp $T/examples/jsm/loaders/GLTFLoader.js $T/examples/jsm/loaders/HDRLoader.js "$W/lib/three/examples/jsm/loaders/"
+          cp $T/examples/jsm/utils/BufferGeometryUtils.js $T/examples/jsm/utils/SkeletonUtils.js "$W/lib/three/examples/jsm/utils/"
+          cp -r node_modules/pixelfx/src/. "$W/lib/pixelfx/"
+          cd "$W"
+          npx -y hyperframes@0.9.104 lint
+          npx -y hyperframes@0.9.104 check
+          npx -y hyperframes@0.9.104 render -f 30 -o polyhaven.mp4
+          frames=$(ffprobe -v error -count_frames -select_streams v -show_entries stream=nb_read_frames -of csv=p=0 polyhaven.mp4)
+          echo "rendered $frames frames"
+          test "$frames" -eq 120
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -191,5 +236,8 @@ jobs:
             ${{ runner.temp }}/lemo-opuscar/lemo-crt.mp4
             ${{ runner.temp }}/data-animation/data-animation.mp4
             ${{ runner.temp }}/map-animation/map-animation.mp4
+            ${{ runner.temp }}/polyhaven/polyhaven.mp4
+            ${{ runner.temp }}/polyhaven/polyhaven/manifest.json
+            ${{ runner.temp }}/polyhaven/polyhaven/CREDITS.md
             bun-lock-resolve.diff
           if-no-files-found: ignore

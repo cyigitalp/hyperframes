@@ -1,0 +1,9 @@
+{
+  "output": { "width": 1280, "height": 720 },
+  "maxBytes": 41943040,
+  "assets": {
+    "model": { "type": "models", "query": "rubber duck toy", "coverage": 0.5 },
+    "material": { "type": "textures", "query": "wooden floor planks", "coverage": 0.4 },
+    "hdri": { "type": "hdris", "query": "studio softbox", "background": true, "blurred": true }
+  }
+}
